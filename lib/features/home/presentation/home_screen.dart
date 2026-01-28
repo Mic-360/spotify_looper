@@ -1,29 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/breakpoints.dart';
 import '../../../core/constants/spacing.dart';
 import '../../../shared/models/track.dart';
-import '../../../shared/widgets/loading_indicator.dart';
+import '../data/home_repository.dart';
 import 'widgets/animated_track_card.dart';
 import 'widgets/section_header.dart';
 
 /// Home screen with staggered grid of tracks.
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final recentlyPlayed = ref.watch(recentlyPlayedProvider);
 
-class _HomeScreenState extends State<HomeScreen> {
-  bool _isLoading = true;
-  List<Track> _trendingTracks = [];
-  List<Track> _favoriteTracks = [];
-  List<Track> _recentTracks = [];
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Home'),
@@ -35,83 +28,91 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const LoadingOverlay(message: 'Loading your music...')
-          : RefreshIndicator(
-              onRefresh: _onRefresh,
-              child: CustomScrollView(
-                slivers: [
-                  // Trending Section
-                  SliverToBoxAdapter(
-                    child: SectionHeader(
-                      title: 'Trending Now',
-                      subtitle: 'Popular tracks on Spotify',
-                      onSeeAll: () {},
-                    ),
-                  ),
-                  _buildTrendingGrid(),
-
-                  // Favorites Section
-                  SliverToBoxAdapter(
-                    child: SectionHeader(
-                      title: 'Your Favorites',
-                      subtitle: 'Tracks with saved loops & skips',
-                      onSeeAll: () => context.go('/favorites'),
-                    ),
-                  ),
-                  _buildHorizontalList(_favoriteTracks),
-
-                  // Recent Section
-                  SliverToBoxAdapter(
-                    child: SectionHeader(
+      body: RefreshIndicator(
+        onRefresh: () async => ref.refresh(recentlyPlayedProvider),
+        child: CustomScrollView(
+          slivers: [
+            // Recent Section
+            recentlyPlayed.when(
+              data: (tracks) => SliverToBoxAdapter(
+                child: Column(
+                  children: [
+                    SectionHeader(
                       title: 'Recently Played',
                       subtitle: 'Your listening history',
                       onSeeAll: () => context.go('/history'),
                     ),
+                    _buildHorizontalList(tracks, context),
+                  ],
+                ),
+              ),
+              loading: () => const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(Spacing.xl),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ),
+              error: (err, stack) => SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(Spacing.xl),
+                  child: Center(
+                    child: Text('Playback Error: Make sure Spotify is active.'),
                   ),
-                  _buildHorizontalList(_recentTracks),
-
-                  // Bottom padding
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: Spacing.xxxl),
-                  ),
-                ],
+                ),
               ),
             ),
-    );
-  }
 
-  @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
-
-  Widget _buildHorizontalList(List<Track> tracks) {
-    return SliverToBoxAdapter(
-      child: SizedBox(
-        height: 200,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: Spacing.l),
-          itemCount: tracks.length,
-          separatorBuilder: (_, __) => const SizedBox(width: Spacing.m),
-          itemBuilder: (context, index) {
-            return SizedBox(
-              width: 150,
-              child: AnimatedTrackCard(
-                track: tracks[index],
-                delay: index * 50,
-                onTap: () => context.go('/player/${tracks[index].id}'),
+            // Trending (Mock for now as Spotify doesn't have a simple trending endpoint without more scopes)
+            SliverToBoxAdapter(
+              child: SectionHeader(
+                title: 'Trending Now',
+                subtitle: 'Popular tracks on Spotify',
+                onSeeAll: () {},
               ),
-            );
-          },
+            ),
+            _buildTrendingGrid(_getMockTracks('trending'), context),
+
+            // Favorites (Mock for now)
+            SliverToBoxAdapter(
+              child: SectionHeader(
+                title: 'Your Favorites',
+                subtitle: 'Tracks with saved loops & skips',
+                onSeeAll: () => context.go('/favorites'),
+              ),
+            ),
+            _buildHorizontalList(_getMockTracks('favorites'), context),
+
+            // Bottom padding
+            const SliverToBoxAdapter(child: SizedBox(height: Spacing.xxxl)),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildTrendingGrid() {
+  Widget _buildHorizontalList(List<Track> tracks, BuildContext context) {
+    return SizedBox(
+      height: 200,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: Spacing.l),
+        itemCount: tracks.length,
+        separatorBuilder: (_, __) => const SizedBox(width: Spacing.m),
+        itemBuilder: (context, index) {
+          return SizedBox(
+            width: 150,
+            child: AnimatedTrackCard(
+              track: tracks[index],
+              delay: index * 50,
+              onTap: () => context.go('/player/${tracks[index].id}'),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildTrendingGrid(List<Track> trendingTracks, BuildContext context) {
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: Spacing.l),
       sliver: SliverLayoutBuilder(
@@ -129,11 +130,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             delegate: SliverChildBuilderDelegate((context, index) {
               return AnimatedTrackCard(
-                track: _trendingTracks[index],
+                track: trendingTracks[index],
                 delay: index * 50,
-                onTap: () => context.go('/player/${_trendingTracks[index].id}'),
+                onTap: () => context.go('/player/${trendingTracks[index].id}'),
               );
-            }, childCount: _trendingTracks.length),
+            }, childCount: trendingTracks.length),
           );
         },
       ),
@@ -153,25 +154,5 @@ class _HomeScreenState extends State<HomeScreen> {
         spotifyUri: 'spotify:track:${type}_$index',
       ),
     );
-  }
-
-  Future<void> _loadData() async {
-    // Simulate loading data
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-        // Mock data - replace with actual Spotify API calls
-        _trendingTracks = _getMockTracks('trending');
-        _favoriteTracks = _getMockTracks('favorites');
-        _recentTracks = _getMockTracks('recent');
-      });
-    }
-  }
-
-  Future<void> _onRefresh() async {
-    setState(() => _isLoading = true);
-    await _loadData();
   }
 }
