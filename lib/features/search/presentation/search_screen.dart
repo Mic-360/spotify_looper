@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/durations.dart';
 import '../../../core/constants/spacing.dart';
 import '../../../shared/models/track.dart';
-import '../../../shared/widgets/loading_indicator.dart';
+import '../data/search_repository.dart';
 
 /// Search screen with real-time search functionality.
-class SearchScreen extends StatefulWidget {
+class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
 
   @override
-  State<SearchScreen> createState() => _SearchScreenState();
+  ConsumerState<SearchScreen> createState() => _SearchScreenState();
 }
 
 class _SearchResultItem extends StatefulWidget {
@@ -115,18 +116,17 @@ class _SearchResultItemState extends State<_SearchResultItem>
   }
 }
 
-class _SearchScreenState extends State<SearchScreen> {
+class _SearchScreenState extends ConsumerState<SearchScreen> {
   final _searchController = TextEditingController();
   final _focusNode = FocusNode();
-
-  bool _isSearching = false;
-  List<Track> _results = [];
-  String _lastQuery = '';
+  String _currentQuery = '';
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+
+    final searchResults = ref.watch(searchResultsProvider(_currentQuery));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Search')),
@@ -138,7 +138,9 @@ class _SearchScreenState extends State<SearchScreen> {
             child: TextField(
               controller: _searchController,
               focusNode: _focusNode,
-              onChanged: _onSearch,
+              onChanged: (value) {
+                setState(() => _currentQuery = value);
+              },
               decoration: InputDecoration(
                 hintText: 'Search for songs, artists...',
                 prefixIcon: const Icon(Icons.search),
@@ -150,12 +152,18 @@ class _SearchScreenState extends State<SearchScreen> {
                     : null,
               ),
               textInputAction: TextInputAction.search,
-              onSubmitted: _onSearch,
             ),
           ),
 
           // Results
-          Expanded(child: _buildContent(colorScheme, textTheme)),
+          Expanded(
+            child: searchResults.when(
+              data: (tracks) =>
+                  _buildResultsList(tracks, colorScheme, textTheme),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => _buildError(err, colorScheme, textTheme),
+            ),
+          ),
         ],
       ),
     );
@@ -166,33 +174,6 @@ class _SearchScreenState extends State<SearchScreen> {
     _searchController.dispose();
     _focusNode.dispose();
     super.dispose();
-  }
-
-  Widget _buildContent(ColorScheme colorScheme, TextTheme textTheme) {
-    if (_isSearching) {
-      return const LoadingOverlay(message: 'Searching...');
-    }
-
-    if (_searchController.text.isEmpty) {
-      return _buildEmptyState(colorScheme, textTheme);
-    }
-
-    if (_results.isEmpty) {
-      return _buildNoResults(colorScheme, textTheme);
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: Spacing.l),
-      itemCount: _results.length,
-      itemBuilder: (context, index) {
-        final track = _results[index];
-        return _SearchResultItem(
-          track: track,
-          delay: index * 30,
-          onTap: () => context.go('/player/${track.id}'),
-        );
-      },
-    );
   }
 
   Widget _buildEmptyState(ColorScheme colorScheme, TextTheme textTheme) {
@@ -211,6 +192,34 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildError(
+    Object error,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(Spacing.xl),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: colorScheme.error),
+            const SizedBox(height: Spacing.l),
+            Text('Playback Error', style: textTheme.titleLarge),
+            const SizedBox(height: Spacing.s),
+            Text(
+              'Make sure you have an active Spotify session.',
+              textAlign: TextAlign.center,
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -235,56 +244,38 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  Widget _buildResultsList(
+    List<Track> tracks,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    if (_searchController.text.isEmpty) {
+      return _buildEmptyState(colorScheme, textTheme);
+    }
+
+    if (tracks.isEmpty) {
+      return _buildNoResults(colorScheme, textTheme);
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: Spacing.l),
+      itemCount: tracks.length,
+      itemBuilder: (context, index) {
+        final track = tracks[index];
+        return _SearchResultItem(
+          track: track,
+          delay: index * 30,
+          onTap: () => context.go('/player/${track.id}'),
+        );
+      },
+    );
+  }
+
   void _clearSearch() {
     _searchController.clear();
     setState(() {
-      _results = [];
-      _lastQuery = '';
+      _currentQuery = '';
     });
     _focusNode.requestFocus();
-  }
-
-  List<Track> _getMockResults(String query) {
-    return List.generate(10, (index) {
-      return Track(
-        id: 'search_${query}_$index',
-        name: '$query Result ${index + 1}',
-        artistName: 'Artist ${(index % 3) + 1}',
-        albumName: 'Album ${(index % 2) + 1}',
-        albumCoverUrl: 'https://picsum.photos/seed/search$query$index/300/300',
-        duration: Duration(minutes: 3 + (index % 3), seconds: 20 + index * 3),
-        spotifyUri: 'spotify:track:search_${query}_$index',
-      );
-    });
-  }
-
-  Future<void> _onSearch(String query) async {
-    if (query.isEmpty) {
-      setState(() {
-        _results = [];
-        _lastQuery = '';
-      });
-      return;
-    }
-
-    if (query == _lastQuery) return;
-
-    setState(() => _isSearching = true);
-
-    // Debounce - wait a bit before searching
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    if (_searchController.text != query) return;
-
-    // Simulate API call
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    if (mounted && _searchController.text == query) {
-      setState(() {
-        _isSearching = false;
-        _lastQuery = query;
-        _results = _getMockResults(query);
-      });
-    }
   }
 }
