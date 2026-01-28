@@ -43,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen>
                     animationValue: _waveController.value,
                     color: const Color(
                       0xFF1DB954,
-                    ).withOpacity(isDark ? 0.15 : 0.25),
+                    ).withValues(alpha: isDark ? 0.15 : 0.25),
                   ),
                 );
               },
@@ -69,7 +69,10 @@ class _LoginScreenState extends State<LoginScreen>
                         ShaderMask(
                           shaderCallback: (bounds) => LinearGradient(
                             colors: isDark
-                                ? [Colors.white, Colors.white.withOpacity(0.6)]
+                                ? [
+                                    Colors.white,
+                                    Colors.white.withValues(alpha: 0.6),
+                                  ]
                                 : [
                                     const Color(0xFF111827),
                                     const Color(0xFF4B5563),
@@ -411,7 +414,7 @@ class _WavePainter extends CustomPainter {
 
     // Wave 2 (offset)
     final path2 = Path();
-    paint.color = color.withOpacity(color.opacity * 0.5);
+    paint.color = color.withValues(alpha: color.a * 0.5);
     path2.moveTo(0, size.height * 0.6);
     for (double i = 0; i <= size.width; i++) {
       path2.lineTo(

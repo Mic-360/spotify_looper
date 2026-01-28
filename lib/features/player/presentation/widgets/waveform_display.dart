@@ -68,7 +68,9 @@ class WaveformDisplay extends StatelessWidget {
                       ? position.inMilliseconds / duration.inMilliseconds
                       : 0,
                   progressColor: colorScheme.primary,
-                  waveformColor: colorScheme.onSurfaceVariant.withOpacity(0.3),
+                  waveformColor: colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.3,
+                  ),
                   section: section,
                   totalDuration: duration,
                   sectionColor: _getSectionColor(context),
@@ -97,7 +99,7 @@ class WaveformDisplay extends StatelessWidget {
                   vertical: Spacing.xs,
                 ),
                 decoration: BoxDecoration(
-                  color: _getSectionColor(context).withOpacity(0.2),
+                  color: _getSectionColor(context).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -136,7 +138,7 @@ class WaveformDisplay extends StatelessWidget {
       case PlaybackMode.loop:
         return colorScheme.tertiary;
       case PlaybackMode.skip:
-        return colorScheme.error.withOpacity(0.8);
+        return colorScheme.error.withValues(alpha: 0.8);
     }
   }
 }
@@ -175,7 +177,7 @@ class _WaveformPainter extends CustomPainter {
         mode != PlaybackMode.normal &&
         totalDuration.inMilliseconds > 0) {
       final sectionPaint = Paint()
-        ..color = sectionColor.withOpacity(0.2)
+        ..color = sectionColor.withValues(alpha: 0.2)
         ..style = PaintingStyle.fill;
 
       final startX =

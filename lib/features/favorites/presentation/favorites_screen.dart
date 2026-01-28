@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/spacing.dart';
+import '../../../shared/models/favorite_track_item.dart';
 import '../../../shared/models/playback_mode.dart';
 import '../../../shared/models/track.dart';
 
-/// Favorites screen with high-fidelity Pulse Loop aesthetic.
+/// Favorites screen with high-fidelity Pulse Loop aesthetic and Grid/List toggle.
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
 
@@ -13,27 +14,293 @@ class FavoritesScreen extends StatefulWidget {
   State<FavoritesScreen> createState() => _FavoritesScreenState();
 }
 
-class FavoriteTrackItem {
-  final Track track;
-  final PlaybackMode mode;
-  final SectionMarker? section;
+enum FavoritesViewMode { grid, list }
 
-  const FavoriteTrackItem({
-    required this.track,
-    required this.mode,
-    this.section,
-  });
+class _FavoriteGridItem extends StatelessWidget {
+  final FavoriteTrackItem item;
+  final VoidCallback onTap;
+
+  const _FavoriteGridItem({required this.item, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF222222),
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Image.network(
+                      item.track.albumCoverUrl,
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.play_arrow_rounded,
+                        color: Colors.black,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        item.track.formattedDuration,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              item.track.name,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              item.curator ?? item.track.artistName,
+              style: const TextStyle(color: Colors.grey, fontSize: 11),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.favorite_rounded,
+                      color: Color(0xFF1DB954),
+                      size: 14,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      item.likes,
+                      style: const TextStyle(color: Colors.grey, fontSize: 11),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.graphic_eq_rounded,
+                      color: Colors.grey,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${item.loopCount}',
+                      style: const TextStyle(color: Colors.grey, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FavoriteListItem extends StatelessWidget {
+  final FavoriteTrackItem item;
+  final VoidCallback onTap;
+
+  const _FavoriteListItem({required this.item, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF222222),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        ),
+        child: Row(
+          children: [
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    item.track.albumCoverUrl,
+                    width: 80,
+                    height: 80,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.play_arrow_rounded,
+                    color: Colors.black,
+                    size: 20,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          item.track.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const Icon(
+                        Icons.more_vert_rounded,
+                        color: Colors.grey,
+                        size: 20,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Text(
+                        'Curated by ',
+                        style: TextStyle(color: Colors.grey[400], fontSize: 13),
+                      ),
+                      Text(
+                        item.curator ?? item.track.artistName,
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(
+                            0xFF1DB954,
+                          ).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          item.track.formattedDuration,
+                          style: const TextStyle(
+                            color: Color(0xFF1DB954),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.favorite_rounded,
+                        color: Color(0xFF1DB954),
+                        size: 14,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        item.likes,
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Icon(
+                        Icons.graphic_eq_rounded,
+                        color: Colors.grey,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${item.loopCount} Loops',
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
   bool _isLoading = true;
   List<FavoriteTrackItem> _favorites = [];
-  PlaybackMode? _filterMode;
-
-  List<FavoriteTrackItem> get _filteredFavorites {
-    if (_filterMode == null) return _favorites;
-    return _favorites.where((f) => f.mode == _filterMode).toList();
-  }
+  FavoritesViewMode _viewMode = FavoritesViewMode.grid;
 
   @override
   Widget build(BuildContext context) {
@@ -66,47 +333,28 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           letterSpacing: -1.0,
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.tune_rounded,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                        onPressed: () => _showImportExportSheet(context),
+                      Row(
+                        children: [
+                          _ViewToggleButton(
+                            icon: Icons.grid_view_rounded,
+                            isSelected: _viewMode == FavoritesViewMode.grid,
+                            onTap: () => setState(
+                              () => _viewMode = FavoritesViewMode.grid,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          _ViewToggleButton(
+                            icon: Icons.view_list_rounded,
+                            isSelected: _viewMode == FavoritesViewMode.list,
+                            onTap: () => setState(
+                              () => _viewMode = FavoritesViewMode.list,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-
-                // Filter chips
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: Spacing.xl),
-                  child: Row(
-                    children: [
-                      _FilterChip(
-                        label: 'All',
-                        isSelected: _filterMode == null,
-                        onTap: () => setState(() => _filterMode = null),
-                      ),
-                      const SizedBox(width: 8),
-                      _FilterChip(
-                        label: 'Loops',
-                        isSelected: _filterMode == PlaybackMode.loop,
-                        onTap: () =>
-                            setState(() => _filterMode = PlaybackMode.loop),
-                      ),
-                      const SizedBox(width: 8),
-                      _FilterChip(
-                        label: 'Skips',
-                        isSelected: _filterMode == PlaybackMode.skip,
-                        onTap: () =>
-                            setState(() => _filterMode = PlaybackMode.skip),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 20),
 
                 Expanded(
                   child: _isLoading
@@ -115,24 +363,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                             color: Color(0xFF1DB954),
                           ),
                         )
-                      : _filteredFavorites.isEmpty
+                      : _favorites.isEmpty
                       ? _buildEmptyState()
-                      : ListView.builder(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: Spacing.xl,
-                          ),
-                          physics: const BouncingScrollPhysics(),
-                          itemCount: _filteredFavorites.length,
-                          itemBuilder: (context, index) {
-                            final item = _filteredFavorites[index];
-                            return _FavoriteTile(
-                              item: item,
-                              onTap: () =>
-                                  context.go('/player/${item.track.id}'),
-                              onDelete: () => _deleteFavorite(index),
-                            );
-                          },
-                        ),
+                      : _viewMode == FavoritesViewMode.grid
+                      ? _buildGridView()
+                      : _buildListView(),
                 ),
               ],
             ),
@@ -183,75 +418,40 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
   }
 
-  void _deleteFavorite(int index) {
-    setState(() => _favorites.removeAt(index));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: const Color(0xFF1A1A1A),
-        content: const Text(
-          'Removed from favorites',
-          style: TextStyle(color: Colors.white),
-        ),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  Widget _buildGridView() {
+    return GridView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: Spacing.xl),
+      physics: const BouncingScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
+        childAspectRatio: 0.75,
       ),
+      itemCount: _favorites.length,
+      itemBuilder: (context, index) {
+        final item = _favorites[index];
+        return _FavoriteGridItem(
+          item: item,
+          onTap: () => context.go('/player/${item.track.id}'),
+        );
+      },
     );
   }
 
-  List<FavoriteTrackItem> _getMockFavorites() {
-    return [
-      FavoriteTrackItem(
-        track: Track(
-          id: 'fav_1',
-          name: 'Midnight City',
-          artistName: 'M83',
-          albumName: 'Hurry Up, We\'re Dreaming',
-          albumCoverUrl: 'https://picsum.photos/seed/fav1/300/300',
-          duration: const Duration(minutes: 4, seconds: 03),
-          spotifyUri: 'spotify:track:fav_1',
-        ),
-        mode: PlaybackMode.loop,
-        section: SectionMarker(
-          startTime: const Duration(minutes: 1, seconds: 30),
-          endTime: const Duration(minutes: 2, seconds: 05),
-          label: 'Chorus Loop',
-        ),
-      ),
-      FavoriteTrackItem(
-        track: Track(
-          id: 'fav_2',
-          name: 'Stargazing',
-          artistName: 'Travis Scott',
-          albumName: 'Astroworld',
-          albumCoverUrl: 'https://picsum.photos/seed/fav2/300/300',
-          duration: const Duration(minutes: 4, seconds: 30),
-          spotifyUri: 'spotify:track:fav_2',
-        ),
-        mode: PlaybackMode.skip,
-        section: SectionMarker(
-          startTime: Duration.zero,
-          endTime: const Duration(minutes: 0, seconds: 45),
-          label: 'Skit',
-        ),
-      ),
-      FavoriteTrackItem(
-        track: Track(
-          id: 'fav_3',
-          name: 'Blinding Lights',
-          artistName: 'The Weeknd',
-          albumName: 'After Hours',
-          albumCoverUrl: 'https://picsum.photos/seed/fav3/300/300',
-          duration: const Duration(minutes: 3, seconds: 20),
-          spotifyUri: 'spotify:track:fav_3',
-        ),
-        mode: PlaybackMode.loop,
-        section: SectionMarker(
-          startTime: const Duration(minutes: 0, seconds: 40),
-          endTime: const Duration(minutes: 1, seconds: 20),
-          label: 'Intro Beat',
-        ),
-      ),
-    ];
+  Widget _buildListView() {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: Spacing.xl),
+      physics: const BouncingScrollPhysics(),
+      itemCount: _favorites.length,
+      itemBuilder: (context, index) {
+        final item = _favorites[index];
+        return _FavoriteListItem(
+          item: item,
+          onTap: () => context.go('/player/${item.track.id}'),
+        );
+      },
+    );
   }
 
   Future<void> _loadFavorites() async {
@@ -259,213 +459,70 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     if (mounted) {
       setState(() {
         _isLoading = false;
-        _favorites = _getMockFavorites();
+        _favorites = [
+          FavoriteTrackItem(
+            track: Track(
+              id: 'fav_1',
+              name: 'Deep House Mix 04',
+              artistName: 'Alex Beats',
+              albumName: 'Hurry Up, We\'re Dreaming',
+              albumCoverUrl: 'https://picsum.photos/seed/fav1/400/400',
+              duration: const Duration(minutes: 4, seconds: 20),
+              spotifyUri: 'spotify:track:fav_1',
+            ),
+            mode: PlaybackMode.loop,
+            likes: '2.4k',
+            loopCount: 12,
+            curator: '@alex_beats',
+          ),
+          FavoriteTrackItem(
+            track: Track(
+              id: 'fav_2',
+              name: 'Ambient Rain',
+              artistName: 'Nature Sounds',
+              albumName: 'Soundscapes',
+              albumCoverUrl: 'https://picsum.photos/seed/fav2/400/400',
+              duration: const Duration(minutes: 5, seconds: 00),
+              spotifyUri: 'spotify:track:fav_2',
+            ),
+            mode: PlaybackMode.normal,
+            likes: '5.6k',
+            loopCount: 22,
+            curator: '@nature_sounds',
+          ),
+          FavoriteTrackItem(
+            track: Track(
+              id: 'fav_3',
+              name: 'Synthwave Night',
+              artistName: 'Neon Dreamer',
+              albumName: 'Retro Waves',
+              albumCoverUrl: 'https://picsum.photos/seed/fav3/400/400',
+              duration: const Duration(minutes: 3, seconds: 45),
+              spotifyUri: 'spotify:track:fav_3',
+            ),
+            mode: PlaybackMode.loop,
+            likes: '1.8k',
+            loopCount: 8,
+            curator: '@neon_dreamer',
+          ),
+          FavoriteTrackItem(
+            track: Track(
+              id: 'fav_4',
+              name: 'Lo-Fi Study Beats',
+              artistName: 'Chill Vibes',
+              albumName: 'Lofi Girl',
+              albumCoverUrl: 'https://picsum.photos/seed/fav4/400/400',
+              duration: const Duration(minutes: 2, seconds: 30),
+              spotifyUri: 'spotify:track:fav_4',
+            ),
+            mode: PlaybackMode.loop,
+            likes: '10.2k',
+            loopCount: 45,
+            curator: '@chill_vibes',
+          ),
+        ];
       });
     }
-  }
-
-  void _showImportExportSheet(BuildContext context) {
-    showModalBottomSheet(
-      backgroundColor: const Color(0xFF1A1A1A),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      context: context,
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(Spacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Manage Favorites',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 24),
-            _SheetTile(
-              icon: Icons.upload_rounded,
-              title: 'Import backup',
-              onTap: () => Navigator.pop(context),
-            ),
-            _SheetTile(
-              icon: Icons.download_rounded,
-              title: 'Export backup',
-              onTap: () => Navigator.pop(context),
-            ),
-            _SheetTile(
-              icon: Icons.share_rounded,
-              title: 'Share list',
-              onTap: () => Navigator.pop(context),
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FavoriteTile extends StatelessWidget {
-  final FavoriteTrackItem item;
-  final VoidCallback onTap;
-  final VoidCallback onDelete;
-
-  const _FavoriteTile({
-    required this.item,
-    required this.onTap,
-    required this.onDelete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.03),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(14),
-            child: Image.network(
-              item.track.albumCoverUrl,
-              width: 56,
-              height: 56,
-              fit: BoxFit.cover,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.track.name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  item.track.artistName,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1DB954).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        item.mode == PlaybackMode.loop
-                            ? Icons.repeat_rounded
-                            : Icons.skip_next_rounded,
-                        size: 12,
-                        color: const Color(0xFF1DB954),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        item.section?.label ??
-                            (item.mode == PlaybackMode.loop ? 'Loop' : 'Skip'),
-                        style: const TextStyle(
-                          color: Color(0xFF1DB954),
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(
-              Icons.play_circle_fill_rounded,
-              color: Color(0xFF1DB954),
-              size: 32,
-            ),
-            onPressed: onTap,
-          ),
-          IconButton(
-            icon: const Icon(
-              Icons.delete_outline_rounded,
-              color: Colors.white24,
-              size: 20,
-            ),
-            onPressed: onDelete,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _FilterChip({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFF1DB954)
-              : Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isSelected
-                ? const Color(0xFF1DB954)
-                : Colors.white.withValues(alpha: 0.05),
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.black : Colors.white60,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            fontSize: 13,
-          ),
-        ),
-      ),
-    );
   }
 }
 
@@ -507,37 +564,43 @@ class _GlowBlob extends StatelessWidget {
   }
 }
 
-class _SheetTile extends StatelessWidget {
+class _ViewToggleButton extends StatelessWidget {
   final IconData icon;
-  final String title;
+  final bool isSelected;
   final VoidCallback onTap;
 
-  const _SheetTile({
+  const _ViewToggleButton({
     required this.icon,
-    required this.title,
+    required this.isSelected,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(icon, color: Colors.white70, size: 20),
-      ),
-      title: Text(
-        title,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 15,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
+    return GestureDetector(
       onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF1DB954) : const Color(0xFF2A2A2A),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF1DB954).withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Icon(
+          icon,
+          color: isSelected ? Colors.white : Colors.grey[400],
+          size: 20,
+        ),
+      ),
     );
   }
 }

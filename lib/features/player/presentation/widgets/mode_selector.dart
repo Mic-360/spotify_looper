@@ -106,10 +106,10 @@ class _ModeChipState extends State<_ModeChip>
               ],
             ),
             selected: widget.isSelected,
-            onSelected: (_) => widget.onTap(),
+            onSelected: (selected) => widget.onTap(),
             backgroundColor: colorScheme.surfaceContainerHighest,
             selectedColor: widget.isSelected
-                ? modeColor.withOpacity(0.2)
+                ? modeColor.withValues(alpha: 0.2)
                 : null,
             checkmarkColor: modeColor,
             side: widget.isSelected
@@ -162,7 +162,7 @@ class _ModeChipState extends State<_ModeChip>
       case PlaybackMode.loop:
         return colorScheme.tertiary;
       case PlaybackMode.skip:
-        return colorScheme.error.withOpacity(0.8);
+        return colorScheme.error.withValues(alpha: 0.8);
     }
   }
 }

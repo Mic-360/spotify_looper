@@ -22,7 +22,14 @@ class _GlowBlob extends StatelessWidget {
   final Color color;
   final double size;
 
-  const _GlowBlob({this.top, this.left, this.right, this.bottom, required this.color, required this.size});
+  const _GlowBlob({
+    this.top,
+    this.left,
+    this.right,
+    this.bottom,
+    required this.color,
+    required this.size,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -37,11 +44,7 @@ class _GlowBlob extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           boxShadow: [
-            BoxShadow(
-              color: color,
-              blurRadius: 80,
-              spreadRadius: 20,
-            ),
+            BoxShadow(color: color, blurRadius: 80, spreadRadius: 20),
           ],
         ),
       ),
@@ -54,16 +57,20 @@ class _SearchResultTile extends StatelessWidget {
   final int index;
   final VoidCallback onTap;
 
-  const _SearchResultTile({required this.track, required this.index, required this.onTap});
+  const _SearchResultTile({
+    required this.track,
+    required this.index,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
+        color: Colors.white.withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: ListTile(
         onTap: onTap,
@@ -75,7 +82,7 @@ class _SearchResultTile extends StatelessWidget {
             width: 50,
             height: 50,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
+            errorBuilder: (context, error, stackTrace) => Container(
               width: 50,
               height: 50,
               color: Colors.white10,
@@ -85,7 +92,10 @@ class _SearchResultTile extends StatelessWidget {
         ),
         title: Text(
           track.name,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -97,7 +107,7 @@ class _SearchResultTile extends StatelessWidget {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             shape: BoxShape.circle,
           ),
           child: const Icon(Icons.chevron_right_rounded, color: Colors.white54),
@@ -142,15 +152,20 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       ),
                       const SizedBox(height: Spacing.l),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: Spacing.l),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Spacing.l,
+                        ),
                         height: 54,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.08),
+                          color: Colors.white.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.search_rounded, color: Colors.grey),
+                            const Icon(
+                              Icons.search_rounded,
+                              color: Colors.grey,
+                            ),
                             const SizedBox(width: Spacing.s),
                             Expanded(
                               child: TextField(
@@ -161,7 +176,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 },
                                 decoration: InputDecoration(
                                   hintText: 'Artists, tracks, or vibes...',
-                                  hintStyle: textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                                  hintStyle: textTheme.bodyMedium?.copyWith(
+                                    color: Colors.grey,
+                                  ),
                                   border: InputBorder.none,
                                   isDense: true,
                                 ),
@@ -171,7 +188,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             ),
                             if (_currentQuery.isNotEmpty)
                               IconButton(
-                                icon: const Icon(Icons.clear_rounded, color: Colors.grey, size: 20),
+                                icon: const Icon(
+                                  Icons.clear_rounded,
+                                  color: Colors.grey,
+                                  size: 20,
+                                ),
                                 onPressed: _clearSearch,
                               ),
                           ],
@@ -185,7 +206,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 Expanded(
                   child: searchResults.when(
                     data: (tracks) => _buildResultsList(tracks),
-                    loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF1DB954))),
+                    loading: () => const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF1DB954),
+                      ),
+                    ),
                     error: (err, stack) => _buildError(err),
                   ),
                 ),
@@ -221,13 +246,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           _GlowBlob(
             top: 100,
             left: -100,
-            color: Colors.blue.withOpacity(0.1),
+            color: Colors.blue.withValues(alpha: 0.1),
             size: 400,
           ),
           _GlowBlob(
             bottom: -50,
             right: -50,
-            color: const Color(0xFF1DB954).withOpacity(0.05),
+            color: const Color(0xFF1DB954).withValues(alpha: 0.05),
             size: 300,
           ),
         ],
@@ -240,11 +265,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.search_rounded, size: 80, color: Colors.white.withOpacity(0.05)),
+          Icon(
+            Icons.search_rounded,
+            size: 80,
+            color: Colors.white.withValues(alpha: 0.05),
+          ),
           const SizedBox(height: Spacing.l),
           const Text(
             'Discover Music',
-            style: TextStyle(color: Colors.white54, fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: Colors.white54,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: Spacing.s),
           const Text(
@@ -263,10 +296,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         children: [
           const Icon(Icons.error_outline_rounded, color: Colors.redAccent),
           const SizedBox(height: Spacing.m),
-          const Text('Search failed. Check your connection.', style: TextStyle(color: Colors.grey)),
+          const Text(
+            'Search failed. Check your connection.',
+            style: TextStyle(color: Colors.grey),
+          ),
           TextButton(
-            onPressed: () => ref.invalidate(searchResultsProvider(_currentQuery)),
-            child: const Text('Retry', style: TextStyle(color: Color(0xFF1DB954))),
+            onPressed: () =>
+                ref.invalidate(searchResultsProvider(_currentQuery)),
+            child: const Text(
+              'Retry',
+              style: TextStyle(color: Color(0xFF1DB954)),
+            ),
           ),
         ],
       ),

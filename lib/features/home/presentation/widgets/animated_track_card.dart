@@ -81,8 +81,8 @@ class _AnimatedTrackCardState extends State<AnimatedTrackCard>
         label: 'Play ${widget.track.name} by ${widget.track.artistName}',
         button: true,
         child: GestureDetector(
-          onTapDown: (_) => setState(() => _isTapped = true),
-          onTapUp: (_) {
+          onTapDown: (details) => setState(() => _isTapped = true),
+          onTapUp: (details) {
             setState(() => _isTapped = false);
             widget.onTap?.call();
           },
@@ -110,7 +110,7 @@ class _AnimatedTrackCardState extends State<AnimatedTrackCard>
                             ? Image.network(
                                 widget.track.albumCoverUrl,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) =>
+                                errorBuilder: (context, error, stackTrace) =>
                                     _AlbumPlaceholder(),
                               )
                             : _AlbumPlaceholder(),

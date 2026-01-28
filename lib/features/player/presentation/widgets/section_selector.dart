@@ -41,12 +41,12 @@ class _Handle extends StatelessWidget {
       width: 24,
       height: 48,
       decoration: BoxDecoration(
-        color: isActive ? color : color.withOpacity(0.7),
+        color: isActive ? color : color.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(4),
         boxShadow: isActive
             ? [
                 BoxShadow(
-                  color: color.withOpacity(0.4),
+                  color: color.withValues(alpha: 0.4),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -60,7 +60,7 @@ class _Handle extends StatelessWidget {
             Icon(
               Icons.drag_indicator,
               size: 16,
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
             ),
           ],
         ),
@@ -106,7 +106,7 @@ class _SectionSelectorState extends State<SectionSelector> {
                     height: 32,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: colorScheme.tertiary.withOpacity(0.3),
+                        color: colorScheme.tertiary.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -116,7 +116,7 @@ class _SectionSelectorState extends State<SectionSelector> {
                   Positioned(
                     left: constraints.maxWidth * _startValue - 12,
                     child: GestureDetector(
-                      onHorizontalDragStart: (_) {
+                      onHorizontalDragStart: (details) {
                         setState(() => _isDraggingStart = true);
                       },
                       onHorizontalDragUpdate: (details) {
@@ -126,7 +126,7 @@ class _SectionSelectorState extends State<SectionSelector> {
                             constraints.maxWidth;
                         _onStartChanged(newPos.clamp(0, 1));
                       },
-                      onHorizontalDragEnd: (_) {
+                      onHorizontalDragEnd: (details) {
                         setState(() => _isDraggingStart = false);
                       },
                       child: AnimatedScale(
@@ -146,7 +146,7 @@ class _SectionSelectorState extends State<SectionSelector> {
                   Positioned(
                     left: constraints.maxWidth * _endValue - 12,
                     child: GestureDetector(
-                      onHorizontalDragStart: (_) {
+                      onHorizontalDragStart: (details) {
                         setState(() => _isDraggingEnd = true);
                       },
                       onHorizontalDragUpdate: (details) {
@@ -156,7 +156,7 @@ class _SectionSelectorState extends State<SectionSelector> {
                             constraints.maxWidth;
                         _onEndChanged(newPos.clamp(0, 1));
                       },
-                      onHorizontalDragEnd: (_) {
+                      onHorizontalDragEnd: (details) {
                         setState(() => _isDraggingEnd = false);
                       },
                       child: AnimatedScale(

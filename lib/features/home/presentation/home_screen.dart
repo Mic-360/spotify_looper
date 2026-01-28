@@ -79,7 +79,7 @@ class HomeScreen extends ConsumerWidget {
                       ),
                       height: 54,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.08),
+                        color: Colors.white.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: Row(
@@ -143,7 +143,7 @@ class HomeScreen extends ConsumerWidget {
                             horizontal: Spacing.xl,
                           ),
                           itemCount: 5,
-                          separatorBuilder: (_, __) =>
+                          separatorBuilder: (context, index) =>
                               const SizedBox(width: Spacing.l),
                           itemBuilder: (context, index) {
                             return _LoopReadyCard(
@@ -224,19 +224,19 @@ class HomeScreen extends ConsumerWidget {
           _GlowBlob(
             top: -100,
             right: -100,
-            color: Colors.purple.withOpacity(0.15),
+            color: Colors.purple.withValues(alpha: 0.15),
             size: 400,
           ),
           _GlowBlob(
             top: 150,
             left: -150,
-            color: Colors.blue.withOpacity(0.1),
+            color: Colors.blue.withValues(alpha: 0.1),
             size: 350,
           ),
           _GlowBlob(
             bottom: -50,
             right: 100,
-            color: const Color(0xFF1DB954).withOpacity(0.08),
+            color: const Color(0xFF1DB954).withValues(alpha: 0.08),
             size: 300,
           ),
         ],
@@ -346,11 +346,11 @@ class _CategoryChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: isSelected
             ? const Color(0xFF1DB954)
-            : Colors.white.withOpacity(0.08),
+            : Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(20),
         border: isSelected
             ? null
-            : Border.all(color: Colors.white.withOpacity(0.05)),
+            : Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Text(
         label,
@@ -387,9 +387,9 @@ class _CommunityLoopTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Row(
         children: [
@@ -406,7 +406,7 @@ class _CommunityLoopTile extends StatelessWidget {
             child: Center(
               child: Icon(
                 Icons.play_circle_filled_rounded,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 size: 24,
               ),
             ),
@@ -444,7 +444,7 @@ class _CommunityLoopTile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: const Color(0xFF1DB954).withOpacity(0.1),
+              color: const Color(0xFF1DB954).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -525,7 +525,7 @@ class _LoopReadyCard extends StatelessWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),
@@ -542,7 +542,7 @@ class _LoopReadyCard extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.6),
+                      color: Colors.black.withValues(alpha: 0.6),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: Colors.white10),
                     ),
