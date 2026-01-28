@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/durations.dart';
@@ -6,44 +7,41 @@ import '../../../core/constants/spacing.dart';
 import '../../../shared/models/playback_mode.dart';
 import '../../../shared/models/track.dart';
 import '../../../shared/widgets/loading_indicator.dart';
+import '../data/player_repository.dart';
 import 'widgets/mode_selector.dart';
 import 'widgets/playback_controls.dart';
 import 'widgets/section_selector.dart';
 import 'widgets/waveform_display.dart';
 
 /// Full-screen player with loop/skip mode selection.
-class PlayerScreen extends StatefulWidget {
+class PlayerScreen extends ConsumerStatefulWidget {
   final String trackId;
 
   const PlayerScreen({super.key, required this.trackId});
 
   @override
-  State<PlayerScreen> createState() => _PlayerScreenState();
+  ConsumerState<PlayerScreen> createState() => _PlayerScreenState();
 }
 
-class _PlayerScreenState extends State<PlayerScreen>
+class _PlayerScreenState extends ConsumerState<PlayerScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _entranceController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  // Playback state
-  Track? _track;
-  bool _isLoading = true;
-  bool _isPlaying = false;
-  PlaybackMode _currentMode = PlaybackMode.normal;
-  SectionMarker? _section;
-  Duration _currentPosition = Duration.zero;
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final playbackState = ref.watch(playbackStateProvider);
+    final playbackNotifier = ref.read(playbackStateProvider.notifier);
+
+    final track = playbackState.currentTrack;
 
     return Scaffold(
       body: SafeArea(
-        child: _isLoading
-            ? const LoadingOverlay(message: 'Loading track...')
+        child: track == null
+            ? _buildInitialLoading(context)
             : FadeTransition(
                 opacity: _fadeAnimation,
                 child: SlideTransition(
@@ -60,50 +58,70 @@ class _PlayerScreenState extends State<PlayerScreen>
                           child: Column(
                             children: [
                               // Album art
-                              _buildAlbumArt(),
+                              _buildAlbumArt(track),
                               const SizedBox(height: Spacing.xl),
 
                               // Track info
-                              _buildTrackInfo(textTheme, colorScheme),
+                              _buildTrackInfo(track, textTheme, colorScheme),
                               const SizedBox(height: Spacing.xxl),
 
                               // Mode selector
                               ModeSelector(
-                                currentMode: _currentMode,
-                                onModeChanged: _onModeChanged,
+                                currentMode: playbackState.mode,
+                                onModeChanged: playbackNotifier.setMode,
                               ),
                               const SizedBox(height: Spacing.xl),
 
                               // Section selector (only for loop/skip modes)
-                              if (_currentMode != PlaybackMode.normal &&
-                                  _track != null)
+                              if (playbackState.mode != PlaybackMode.normal)
                                 SectionSelector(
-                                  totalDuration: _track!.duration,
-                                  sectionStart: _section?.startTime,
-                                  sectionEnd: _section?.endTime,
-                                  onStartChanged: _onSectionStartChanged,
-                                  onEndChanged: _onSectionEndChanged,
+                                  totalDuration: track.duration,
+                                  sectionStart:
+                                      playbackState.section?.startTime,
+                                  sectionEnd: playbackState.section?.endTime,
+                                  onStartChanged: (start) {
+                                    final currentSection =
+                                        playbackState.section ??
+                                        SectionMarker(
+                                          startTime: start,
+                                          endTime: track.duration,
+                                        );
+                                    playbackNotifier.setSection(
+                                      currentSection.copyWith(startTime: start),
+                                    );
+                                  },
+                                  onEndChanged: (end) {
+                                    final currentSection =
+                                        playbackState.section ??
+                                        SectionMarker(
+                                          startTime: Duration.zero,
+                                          endTime: end,
+                                        );
+                                    playbackNotifier.setSection(
+                                      currentSection.copyWith(endTime: end),
+                                    );
+                                  },
                                 ),
-                              if (_currentMode != PlaybackMode.normal)
+                              if (playbackState.mode != PlaybackMode.normal)
                                 const SizedBox(height: Spacing.xl),
 
                               // Waveform/Progress
-                              if (_track != null)
-                                WaveformDisplay(
-                                  duration: _track!.duration,
-                                  position: _currentPosition,
-                                  section: _currentMode != PlaybackMode.normal
-                                      ? _section
-                                      : null,
-                                  mode: _currentMode,
-                                  onSeek: _onSeek,
-                                ),
+                              WaveformDisplay(
+                                duration: track.duration,
+                                position: playbackState.position,
+                                section:
+                                    playbackState.mode != PlaybackMode.normal
+                                    ? playbackState.section
+                                    : null,
+                                mode: playbackState.mode,
+                                onSeek: playbackNotifier.seek,
+                              ),
                               const SizedBox(height: Spacing.xl),
 
                               // Playback controls
                               PlaybackControls(
-                                isPlaying: _isPlaying,
-                                onPlayPause: _togglePlayback,
+                                isPlaying: playbackState.isPlaying,
+                                onPlayPause: playbackNotifier.togglePlay,
                                 onPrevious: () {},
                                 onNext: () {},
                               ),
@@ -129,14 +147,17 @@ class _PlayerScreenState extends State<PlayerScreen>
   void initState() {
     super.initState();
     _setupAnimations();
-    _loadTrack();
+    // In a real app, we'd fetch the track data from Spotify first
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeTrack();
+    });
   }
 
-  Widget _buildAlbumArt() {
+  Widget _buildAlbumArt(Track track) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Hero(
-      tag: 'track-${_track?.id}',
+      tag: 'track-${track.id}',
       child: Container(
         width: 280,
         height: 280,
@@ -151,9 +172,9 @@ class _PlayerScreenState extends State<PlayerScreen>
           ],
         ),
         clipBehavior: Clip.antiAlias,
-        child: _track?.albumCoverUrl.isNotEmpty == true
+        child: track.albumCoverUrl.isNotEmpty == true
             ? Image.network(
-                _track!.albumCoverUrl,
+                track.albumCoverUrl,
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) =>
                     _buildAlbumPlaceholder(colorScheme),
@@ -210,11 +231,24 @@ class _PlayerScreenState extends State<PlayerScreen>
     );
   }
 
-  Widget _buildTrackInfo(TextTheme textTheme, ColorScheme colorScheme) {
+  Widget _buildInitialLoading(BuildContext context) {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [LoadingOverlay(message: 'Initializing player...')],
+      ),
+    );
+  }
+
+  Widget _buildTrackInfo(
+    Track track,
+    TextTheme textTheme,
+    ColorScheme colorScheme,
+  ) {
     return Column(
       children: [
         Text(
-          _track?.name ?? 'Unknown Track',
+          track.name,
           style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
           maxLines: 2,
@@ -222,7 +256,7 @@ class _PlayerScreenState extends State<PlayerScreen>
         ),
         const SizedBox(height: Spacing.s),
         Text(
-          _track?.artistName ?? 'Unknown Artist',
+          track.artistName,
           style: textTheme.titleMedium?.copyWith(
             color: colorScheme.onSurfaceVariant,
           ),
@@ -232,65 +266,37 @@ class _PlayerScreenState extends State<PlayerScreen>
     );
   }
 
-  Future<void> _loadTrack() async {
-    // Simulate loading track data
-    await Future.delayed(const Duration(milliseconds: 500));
+  void _initializeTrack() {
+    // This is still a bit mocky but it's now integrated with the state notifier
+    final mockTrack = Track(
+      id: widget.trackId,
+      name: 'High Fidelity Track',
+      artistName: 'Premium Artist',
+      albumName: 'Expressive Album',
+      albumCoverUrl: 'https://picsum.photos/seed/${widget.trackId}/600/600',
+      duration: const Duration(minutes: 4, seconds: 20),
+      spotifyUri: 'spotify:track:${widget.trackId}',
+    );
 
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-        _track = Track(
-          id: widget.trackId,
-          name: 'Sample Track',
-          artistName: 'Sample Artist',
-          albumName: 'Sample Album',
-          albumCoverUrl: 'https://picsum.photos/seed/${widget.trackId}/600/600',
-          duration: const Duration(minutes: 3, seconds: 45),
-          spotifyUri: 'spotify:track:${widget.trackId}',
+    ref.read(playbackStateProvider.notifier).playTrack(mockTrack);
+    ref
+        .read(playbackStateProvider.notifier)
+        .setSection(
+          SectionMarker(
+            startTime: const Duration(seconds: 45),
+            endTime: const Duration(minutes: 1, seconds: 30),
+            label: 'Chorus',
+          ),
         );
-        // Set default section for loop/skip
-        _section = SectionMarker(
-          startTime: const Duration(seconds: 30),
-          endTime: const Duration(minutes: 1, seconds: 15),
-          label: 'Chorus',
-        );
-      });
-    }
   }
 
   void _onAddToFavorites() {
-    // TODO: Implement add to favorites
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Added "${_track?.name}" to favorites'),
+      const SnackBar(
+        content: Text('Added track to favorites'),
         behavior: SnackBarBehavior.floating,
       ),
     );
-  }
-
-  void _onModeChanged(PlaybackMode mode) {
-    setState(() => _currentMode = mode);
-  }
-
-  void _onSectionEndChanged(Duration end) {
-    if (_section != null && end > _section!.startTime) {
-      setState(() {
-        _section = _section!.copyWith(endTime: end);
-      });
-    }
-  }
-
-  void _onSectionStartChanged(Duration start) {
-    if (_section != null && start < _section!.endTime) {
-      setState(() {
-        _section = _section!.copyWith(startTime: start);
-      });
-    }
-  }
-
-  void _onSeek(Duration position) {
-    setState(() => _currentPosition = position);
-    // TODO: Implement actual seek
   }
 
   void _setupAnimations() {
@@ -315,10 +321,5 @@ class _PlayerScreenState extends State<PlayerScreen>
         );
 
     _entranceController.forward();
-  }
-
-  void _togglePlayback() {
-    setState(() => _isPlaying = !_isPlaying);
-    // TODO: Implement actual playback control
   }
 }
