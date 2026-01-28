@@ -35,7 +35,7 @@ class ComponentThemes {
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       showDragHandle: true,
-      dragHandleColor: colorScheme.onSurfaceVariant.withOpacity(0.4),
+      dragHandleColor: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
     );
   }
 
@@ -234,7 +234,7 @@ class ComponentThemes {
       activeTrackColor: colorScheme.primary,
       inactiveTrackColor: colorScheme.surfaceContainerHighest,
       thumbColor: colorScheme.primary,
-      overlayColor: colorScheme.primary.withOpacity(0.12),
+      overlayColor: colorScheme.primary.withValues(alpha: 0.12),
       trackHeight: 4,
     );
   }

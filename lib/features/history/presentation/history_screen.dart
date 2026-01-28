@@ -11,7 +11,7 @@ class HistoryEntry {
   const HistoryEntry({required this.track, required this.playedAt});
 }
 
-/// History screen with Pulse Loop aesthetic.
+/// History screen with grouped tracks and high-fidelity Pulse Loop aesthetic.
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
@@ -59,12 +59,11 @@ class _GlowBlob extends StatelessWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   bool _isLoading = true;
-  List<HistoryEntry> _history = [];
+  List<HistoryEntry> _todayHistory = [];
+  List<HistoryEntry> _yesterdayHistory = [];
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F0F),
       body: Stack(
@@ -74,28 +73,38 @@ class _HistoryScreenState extends State<HistoryScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Header
                 Padding(
-                  padding: const EdgeInsets.all(Spacing.xl),
+                  padding: const EdgeInsets.fromLTRB(
+                    Spacing.xl,
+                    Spacing.l,
+                    Spacing.l,
+                    Spacing.m,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'History',
-                        style: textTheme.headlineMedium?.copyWith(
+                      const Text(
+                        'Playback History',
+                        style: TextStyle(
                           color: Colors.white,
+                          fontSize: 28,
                           fontWeight: FontWeight.bold,
+                          letterSpacing: -0.5,
                         ),
                       ),
                       IconButton(
                         icon: const Icon(
-                          Icons.delete_sweep_rounded,
-                          color: Colors.grey,
+                          Icons.search_rounded,
+                          color: Colors.white,
+                          size: 26,
                         ),
-                        onPressed: _history.isEmpty ? null : _clearHistory,
+                        onPressed: () {},
                       ),
                     ],
                   ),
                 ),
+
                 Expanded(
                   child: _isLoading
                       ? const Center(
@@ -103,22 +112,59 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             color: Color(0xFF1DB954),
                           ),
                         )
-                      : _history.isEmpty
+                      : _todayHistory.isEmpty && _yesterdayHistory.isEmpty
                       ? _buildEmptyState()
-                      : ListView.builder(
+                      : ListView(
                           padding: const EdgeInsets.symmetric(
                             horizontal: Spacing.xl,
                           ),
-                          itemCount: _history.length,
-                          itemBuilder: (context, index) {
-                            final entry = _history[index];
-                            return _HistoryTile(
-                              entry: entry,
-                              timeAgo: _formatTimeAgo(entry.playedAt),
-                              onTap: () =>
-                                  context.go('/player/${entry.track.id}'),
-                            );
-                          },
+                          physics: const BouncingScrollPhysics(),
+                          children: [
+                            // Today Section
+                            if (_todayHistory.isNotEmpty) ...[
+                              const _SectionHeader(title: 'Today'),
+                              const SizedBox(height: 12),
+                              // Now Playing / First Item
+                              _NowPlayingTile(
+                                entry: _todayHistory.first,
+                                onTap: () => context.go(
+                                  '/player/${_todayHistory.first.track.id}',
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              // Remaining Today
+                              ..._todayHistory
+                                  .skip(1)
+                                  .map(
+                                    (entry) => _HistoryTile(
+                                      entry: entry,
+                                      timeLabel: _formatTimeLabel(
+                                        entry.playedAt,
+                                      ),
+                                      onTap: () => context.go(
+                                        '/player/${entry.track.id}',
+                                      ),
+                                    ),
+                                  ),
+                            ],
+
+                            // Yesterday Section
+                            if (_yesterdayHistory.isNotEmpty) ...[
+                              const SizedBox(height: 24),
+                              const _SectionHeader(title: 'Yesterday'),
+                              const SizedBox(height: 12),
+                              ..._yesterdayHistory.map(
+                                (entry) => _HistoryTile(
+                                  entry: entry,
+                                  timeLabel: _formatTimeLabel(entry.playedAt),
+                                  onTap: () =>
+                                      context.go('/player/${entry.track.id}'),
+                                ),
+                              ),
+                            ],
+
+                            const SizedBox(height: 100), // Navigation padding
+                          ],
                         ),
                 ),
               ],
@@ -143,13 +189,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
           _GlowBlob(
             top: -100,
             right: -100,
-            color: Colors.purple.withOpacity(0.1),
+            color: Colors.purple.withValues(alpha: 0.12),
             size: 400,
           ),
           _GlowBlob(
-            bottom: 100,
+            bottom: 150,
             left: -150,
-            color: Colors.blue.withOpacity(0.05),
+            color: Colors.blue.withValues(alpha: 0.08),
             size: 350,
           ),
         ],
@@ -170,79 +216,77 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  void _clearHistory() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
-        title: const Text(
-          'Clear history',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: const Text(
-          'Are you sure you want to clear your listening history?',
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF1DB954),
-            ),
-            onPressed: () {
-              Navigator.pop(context);
-              setState(() => _history.clear());
-            },
-            child: const Text('Clear', style: TextStyle(color: Colors.black)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatTimeAgo(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inMinutes < 1) return 'Just now';
-    if (difference.inHours < 1) return '${difference.inMinutes}m ago';
-    if (difference.inDays < 1) return '${difference.inHours}h ago';
-    return '${difference.inDays}d ago';
-  }
-
-  List<HistoryEntry> _getMockHistory() {
-    final now = DateTime.now();
-    return List.generate(15, (index) {
-      return HistoryEntry(
-        track: Track(
-          id: 'hist_$index',
-          name: [
-            'Lush Life',
-            'Starboy',
-            'Blinding Lights',
-            'The Hills',
-            'After Hours',
-          ][index % 5],
-          artistName: 'The Weeknd',
-          albumName: 'After Hours',
-          albumCoverUrl: 'https://picsum.photos/seed/hist_$index/200/200',
-          duration: const Duration(minutes: 3, seconds: 45),
-          spotifyUri: 'spotify:track:hist_$index',
-        ),
-        playedAt: now.subtract(Duration(hours: index * 3)),
-      );
-    });
+  String _formatTimeLabel(DateTime dateTime) {
+    return '${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')} AM';
   }
 
   Future<void> _loadHistory() async {
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 600));
     if (mounted) {
+      final now = DateTime.now();
       setState(() {
         _isLoading = false;
-        _history = _getMockHistory();
+        _todayHistory = List.generate(
+          4,
+          (index) => HistoryEntry(
+            track: Track(
+              id: 'today_$index',
+              name: [
+                'Midnight City',
+                'Heat Waves',
+                'As It Was',
+                'Blinding Lights',
+              ][index],
+              artistName: [
+                'M83',
+                'Glass Animals',
+                'Harry Styles',
+                'The Weeknd',
+              ][index],
+              albumName: [
+                'Hurry Up, We\'re Dreaming',
+                'Dreamland',
+                'Harry\'s House',
+                'After Hours',
+              ][index],
+              albumCoverUrl: 'https://picsum.photos/seed/hist_t$index/200/200',
+              duration: const Duration(minutes: 3, seconds: 45),
+              spotifyUri: 'spotify:track:hist_t$index',
+            ),
+            playedAt: now.subtract(Duration(minutes: index * 45)),
+          ),
+        );
+
+        _yesterdayHistory = List.generate(
+          4,
+          (index) => HistoryEntry(
+            track: Track(
+              id: 'yest_$index',
+              name: [
+                'Stay',
+                'Good 4 U',
+                'Levitating',
+                'Save Your Tears',
+              ][index],
+              artistName: [
+                'The Kid LAROI, Justin Bieber',
+                'Olivia Rodrigo',
+                'Dua Lipa',
+                'The Weeknd',
+              ][index],
+              albumName: [
+                'F*CK LOVE 3',
+                'SOUR',
+                'Future Nostalgia',
+                'After Hours',
+              ][index],
+              albumCoverUrl: 'https://picsum.photos/seed/hist_y$index/200/200',
+              duration: const Duration(minutes: 3, seconds: 15),
+              spotifyUri: 'spotify:track:hist_y$index',
+            ),
+            playedAt: now.subtract(Duration(days: 1, hours: index * 2)),
+          ),
+        );
       });
     }
   }
@@ -250,53 +294,207 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
 class _HistoryTile extends StatelessWidget {
   final HistoryEntry entry;
-  final String timeAgo;
+  final String timeLabel;
   final VoidCallback onTap;
 
   const _HistoryTile({
     required this.entry,
-    required this.timeAgo,
+    required this.timeLabel,
     required this.onTap,
   });
 
+  // Note: index is not available here, I should probably pass it or just mock it.
+  // The HTML has some favorited and some not. I'll just use a bool or random logic.
+  int get index => entry.track.id.hashCode;
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 4),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                entry.track.albumCoverUrl,
+                width: 56,
+                height: 56,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          entry.track.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(
+                        timeLabel,
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${entry.track.artistName} • ${entry.track.albumName}',
+                    style: const TextStyle(color: Colors.grey, fontSize: 13),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              index % 3 == 0
+                  ? Icons.favorite_rounded
+                  : Icons.favorite_border_rounded,
+              color: index % 3 == 0 ? const Color(0xFF1DB954) : Colors.grey,
+              size: 24,
+            ),
+          ],
+        ),
       ),
-      child: ListTile(
-        onTap: onTap,
-        contentPadding: const EdgeInsets.all(8),
-        leading: ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: Image.network(
-            entry.track.albumCoverUrl,
-            width: 50,
-            height: 50,
-            fit: BoxFit.cover,
-          ),
+    );
+  }
+}
+
+class _NowPlayingTile extends StatelessWidget {
+  final HistoryEntry entry;
+  final VoidCallback onTap;
+
+  const _NowPlayingTile({required this.entry, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFD7E3F8).withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
         ),
-        title: Text(
-          entry.track.name,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+        child: Row(
+          children: [
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    entry.track.albumCoverUrl,
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.equalizer_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          entry.track.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const Text(
+                        'Now',
+                        style: TextStyle(
+                          color: Color(0xFF1DB954),
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${entry.track.artistName} • ${entry.track.albumName}',
+                    style: TextStyle(color: Colors.grey[400], fontSize: 13),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(
+              Icons.favorite_rounded,
+              color: Color(0xFF1DB954),
+              size: 24,
+            ),
+          ],
         ),
-        subtitle: Text(
-          entry.track.artistName,
-          style: const TextStyle(color: Colors.grey, fontSize: 12),
-        ),
-        trailing: Text(
-          timeAgo,
-          style: const TextStyle(color: Colors.white24, fontSize: 11),
-        ),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  const _SectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title.toUpperCase(),
+      style: const TextStyle(
+        color: Colors.grey,
+        fontSize: 11,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.5,
       ),
     );
   }

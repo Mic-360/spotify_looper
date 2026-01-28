@@ -4,14 +4,12 @@ import 'package:go_router/go_router.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/constants/spacing.dart';
 
-/// Settings screen with Pulse Loop aesthetic.
+/// Settings screen with high-fidelity Pulse Loop aesthetic.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F0F),
       body: Stack(
@@ -20,93 +18,121 @@ class SettingsScreen extends StatelessWidget {
           SafeArea(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: Spacing.xl),
+              physics: const BouncingScrollPhysics(),
               children: [
+                // Large Header
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: Spacing.xl),
-                  child: Text(
-                    'Settings',
-                    style: textTheme.headlineMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Settings',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -1.0,
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.05),
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.search_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                          onPressed: () {},
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 
                 // Profile card
                 _buildProfileCard(context),
-                const SizedBox(height: Spacing.xl),
+                const SizedBox(height: 32),
 
-                _buildSectionHeader(context, 'Playback'),
-                _SettingsTile(
+                const _SectionHeader(title: 'Playback'),
+                const SizedBox(height: 12),
+                const _SettingsTile(
                   icon: Icons.speed_rounded,
                   title: 'Default Speed',
                   subtitle: 'Normal',
                 ),
-                _SettingsTile(
+                const _SettingsTile(
                   icon: Icons.timer_rounded,
                   title: 'Loop Count',
                   subtitle: 'Infinite',
                 ),
-                const SizedBox(height: Spacing.xl),
+                const SizedBox(height: 24),
 
-                _buildSectionHeader(context, 'Preferences'),
-                _SettingsTile(
+                const _SectionHeader(title: 'Preferences'),
+                const SizedBox(height: 12),
+                const _SettingsTile(
                   icon: Icons.palette_rounded,
                   title: 'Theme',
                   subtitle: 'Amoled Dark',
                 ),
-                _SettingsTile(
+                const _SettingsTile(
                   icon: Icons.notifications_none_rounded,
                   title: 'Notifications',
                   subtitle: 'Enabled',
                 ),
-                const SizedBox(height: Spacing.xl),
+                const SizedBox(height: 24),
 
-                _buildSectionHeader(context, 'System'),
-                _SettingsTile(
+                const _SectionHeader(title: 'System'),
+                const SizedBox(height: 12),
+                const _SettingsTile(
                   icon: Icons.download_rounded,
                   title: 'Export Favorites',
                 ),
-                _SettingsTile(
+                const _SettingsTile(
                   icon: Icons.delete_outline_rounded,
                   title: 'Clear Cache',
                   isDestructive: true,
                 ),
-                const SizedBox(height: Spacing.xl),
-
-                _buildSectionHeader(context, 'About'),
-                _SettingsTile(
-                  icon: Icons.info_outline_rounded,
-                  title: 'Version',
-                  subtitle: AppConfig.appVersion,
-                ),
-                _SettingsTile(
-                  icon: Icons.description_outlined,
-                  title: 'Licenses',
-                ),
-
-                const SizedBox(height: Spacing.xl),
+                const SizedBox(height: 32),
 
                 // Logout button
-                OutlinedButton(
-                  onPressed: () => _showLogoutDialog(context),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.redAccent,
-                    side: const BorderSide(color: Colors.redAccent, width: 1.5),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                Container(
+                  width: double.infinity,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.redAccent.withValues(alpha: 0.3),
                     ),
                   ),
-                  child: const Text(
-                    'LOG OUT',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
+                  child: TextButton(
+                    onPressed: () => _showLogoutDialog(context),
+                    child: const Text(
+                      'LOG OUT',
+                      style: TextStyle(
+                        color: Colors.redAccent,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 100),
+
+                const SizedBox(height: 40),
+                Center(
+                  child: Text(
+                    'Pulse Loop v${AppConfig.appVersion}',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 120),
               ],
             ),
           ),
@@ -121,16 +147,16 @@ class SettingsScreen extends StatelessWidget {
         children: [
           Container(color: const Color(0xFF0F0F0F)),
           _GlowBlob(
-            top: 200,
-            left: -100,
-            color: Colors.blue.withOpacity(0.05),
+            top: 150,
+            left: -150,
+            color: Colors.blue.withValues(alpha: 0.08),
             size: 400,
           ),
           _GlowBlob(
-            bottom: 50,
-            right: -50,
-            color: Colors.purple.withOpacity(0.05),
-            size: 300,
+            bottom: 100,
+            right: -100,
+            color: Colors.purple.withValues(alpha: 0.08),
+            size: 350,
           ),
         ],
       ),
@@ -141,18 +167,22 @@ class SettingsScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        color: Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Row(
         children: [
           Container(
-            width: 60,
-            height: 60,
-            decoration: const BoxDecoration(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              image: DecorationImage(
+              border: Border.all(
+                color: const Color(0xFF1DB954).withValues(alpha: 0.3),
+                width: 2,
+              ),
+              image: const DecorationImage(
                 image: NetworkImage(
                   'https://lh3.googleusercontent.com/a/ACg8ocL-f_Xm_k_T_Z_T_Z_T_Z_T_Z_T_Z_T_Z_T_Z_T_Z_T_Z_T_Z_T=s96-c',
                 ),
@@ -169,46 +199,46 @@ class SettingsScreen extends StatelessWidget {
                   'Alex Pulse',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  'Premium Member',
-                  style: TextStyle(
-                    color: const Color(0xFF1DB954).withOpacity(0.8),
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1DB954).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'PREMIUM MEMBER',
+                    style: TextStyle(
+                      color: Color(0xFF1DB954),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          IconButton(
-            icon: const Icon(
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
               Icons.edit_rounded,
               color: Colors.white54,
               size: 20,
             ),
-            onPressed: () {},
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 12),
-      child: Text(
-        title.toUpperCase(),
-        style: const TextStyle(
-          color: Colors.grey,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 1.5,
-        ),
       ),
     );
   }
@@ -218,7 +248,11 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A1A),
-        title: const Text('Log out', style: TextStyle(color: Colors.white)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Log out',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         content: const Text(
           'Are you sure you want to log out of Pulse Loop?',
           style: TextStyle(color: Colors.white70),
@@ -229,12 +263,23 @@ class SettingsScreen extends StatelessWidget {
             child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
             onPressed: () {
               Navigator.pop(context);
               context.go('/login');
             },
-            child: const Text('Log out', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Log out',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -280,6 +325,24 @@ class _GlowBlob extends StatelessWidget {
   }
 }
 
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  const _SectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title.toUpperCase(),
+      style: const TextStyle(
+        color: Colors.grey,
+        fontSize: 11,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 2.0,
+      ),
+    );
+  }
+}
+
 class _SettingsTile extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -296,22 +359,34 @@ class _SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        color: Colors.white.withValues(alpha: 0.02),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.03)),
       ),
       child: ListTile(
-        leading: Icon(
-          icon,
-          color: isDestructive ? Colors.redAccent : Colors.white70,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: (isDestructive ? Colors.redAccent : Colors.white).withValues(
+              alpha: 0.05,
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            icon,
+            color: isDestructive ? Colors.redAccent : Colors.white70,
+            size: 20,
+          ),
         ),
         title: Text(
           title,
           style: TextStyle(
             color: isDestructive ? Colors.redAccent : Colors.white,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
           ),
         ),
         subtitle: subtitle != null
@@ -323,6 +398,7 @@ class _SettingsTile extends StatelessWidget {
         trailing: const Icon(
           Icons.chevron_right_rounded,
           color: Colors.white24,
+          size: 20,
         ),
         onTap: () {},
       ),

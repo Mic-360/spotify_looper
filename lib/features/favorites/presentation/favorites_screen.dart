@@ -5,7 +5,7 @@ import '../../../core/constants/spacing.dart';
 import '../../../shared/models/playback_mode.dart';
 import '../../../shared/models/track.dart';
 
-/// Favorites screen with Pulse Loop aesthetic.
+/// Favorites screen with high-fidelity Pulse Loop aesthetic.
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
 
@@ -37,8 +37,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F0F),
       body: Stack(
@@ -48,22 +46,31 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Header
                 Padding(
-                  padding: const EdgeInsets.all(Spacing.xl),
+                  padding: const EdgeInsets.fromLTRB(
+                    Spacing.xl,
+                    Spacing.l,
+                    Spacing.l,
+                    Spacing.m,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
+                      const Text(
                         'Favorites',
-                        style: textTheme.headlineMedium?.copyWith(
+                        style: TextStyle(
                           color: Colors.white,
+                          fontSize: 32,
                           fontWeight: FontWeight.bold,
+                          letterSpacing: -1.0,
                         ),
                       ),
                       IconButton(
                         icon: const Icon(
-                          Icons.import_export_rounded,
-                          color: Colors.grey,
+                          Icons.tune_rounded,
+                          color: Colors.white,
+                          size: 24,
                         ),
                         onPressed: () => _showImportExportSheet(context),
                       ),
@@ -99,7 +106,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   ),
                 ),
 
-                const SizedBox(height: Spacing.l),
+                const SizedBox(height: 20),
 
                 Expanded(
                   child: _isLoading
@@ -114,6 +121,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           padding: const EdgeInsets.symmetric(
                             horizontal: Spacing.xl,
                           ),
+                          physics: const BouncingScrollPhysics(),
                           itemCount: _filteredFavorites.length,
                           itemBuilder: (context, index) {
                             final item = _filteredFavorites[index];
@@ -146,16 +154,16 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         children: [
           Container(color: const Color(0xFF0F0F0F)),
           _GlowBlob(
-            top: 200,
-            right: -100,
-            color: const Color(0xFF1DB954).withOpacity(0.05),
+            top: 150,
+            right: -150,
+            color: const Color(0xFF1DB954).withValues(alpha: 0.1),
             size: 400,
           ),
           _GlowBlob(
-            bottom: -50,
-            left: 50,
-            color: Colors.blue.withOpacity(0.08),
-            size: 300,
+            bottom: 50,
+            left: -100,
+            color: Colors.blue.withValues(alpha: 0.08),
+            size: 350,
           ),
         ],
       ),
@@ -178,13 +186,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   void _deleteFavorite(int index) {
     setState(() => _favorites.removeAt(index));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        backgroundColor: Color(0xFF1A1A1A),
-        content: Text(
+      SnackBar(
+        backgroundColor: const Color(0xFF1A1A1A),
+        content: const Text(
           'Removed from favorites',
           style: TextStyle(color: Colors.white),
         ),
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -225,6 +234,23 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           label: 'Skit',
         ),
       ),
+      FavoriteTrackItem(
+        track: Track(
+          id: 'fav_3',
+          name: 'Blinding Lights',
+          artistName: 'The Weeknd',
+          albumName: 'After Hours',
+          albumCoverUrl: 'https://picsum.photos/seed/fav3/300/300',
+          duration: const Duration(minutes: 3, seconds: 20),
+          spotifyUri: 'spotify:track:fav_3',
+        ),
+        mode: PlaybackMode.loop,
+        section: SectionMarker(
+          startTime: const Duration(minutes: 0, seconds: 40),
+          endTime: const Duration(minutes: 1, seconds: 20),
+          label: 'Intro Beat',
+        ),
+      ),
     ];
   }
 
@@ -242,7 +268,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     showModalBottomSheet(
       backgroundColor: const Color(0xFF1A1A1A),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       context: context,
       builder: (context) => Padding(
@@ -250,30 +276,40 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
             const Text(
-              'Backup',
+              'Manage Favorites',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: Spacing.xl),
+            const SizedBox(height: 24),
             _SheetTile(
               icon: Icons.upload_rounded,
-              title: 'Import Data',
+              title: 'Import backup',
               onTap: () => Navigator.pop(context),
             ),
             _SheetTile(
               icon: Icons.download_rounded,
-              title: 'Export Data',
+              title: 'Export backup',
               onTap: () => Navigator.pop(context),
             ),
             _SheetTile(
               icon: Icons.share_rounded,
-              title: 'Share List',
+              title: 'Share list',
               onTap: () => Navigator.pop(context),
             ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -298,22 +334,22 @@ class _FavoriteTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        color: Colors.white.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Row(
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(14),
             child: Image.network(
               item.track.albumCoverUrl,
-              width: 60,
-              height: 60,
+              width: 56,
+              height: 56,
               fit: BoxFit.cover,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -323,44 +359,65 @@ class _FavoriteTile extends StatelessWidget {
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
+                    fontSize: 15,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   item.track.artistName,
                   style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Icon(
-                      item.mode == PlaybackMode.loop
-                          ? Icons.repeat_rounded
-                          : Icons.skip_next_rounded,
-                      size: 14,
-                      color: const Color(0xFF1DB954),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      item.section?.label ??
-                          (item.mode == PlaybackMode.loop ? 'Loop' : 'Skip'),
-                      style: const TextStyle(
-                        color: Color(0xFF1DB954),
-                        fontSize: 11,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1DB954).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        item.mode == PlaybackMode.loop
+                            ? Icons.repeat_rounded
+                            : Icons.skip_next_rounded,
+                        size: 12,
+                        color: const Color(0xFF1DB954),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      Text(
+                        item.section?.label ??
+                            (item.mode == PlaybackMode.loop ? 'Loop' : 'Skip'),
+                        style: const TextStyle(
+                          color: Color(0xFF1DB954),
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.play_arrow_rounded, color: Colors.white70),
+            icon: const Icon(
+              Icons.play_circle_fill_rounded,
+              color: Color(0xFF1DB954),
+              size: 32,
+            ),
             onPressed: onTap,
           ),
           IconButton(
             icon: const Icon(
               Icons.delete_outline_rounded,
-              color: Colors.redAccent,
+              color: Colors.white24,
               size: 20,
             ),
             onPressed: onDelete,
@@ -387,18 +444,23 @@ class _FilterChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected
               ? const Color(0xFF1DB954)
-              : Colors.white.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(20),
+              : Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFF1DB954)
+                : Colors.white.withValues(alpha: 0.05),
+          ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.black : Colors.grey,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected ? Colors.black : Colors.white60,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             fontSize: 13,
           ),
         ),
@@ -459,8 +521,22 @@ class _SheetTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: Colors.white70),
-      title: Text(title, style: const TextStyle(color: Colors.white)),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, color: Colors.white70, size: 20),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
       onTap: onTap,
     );
   }

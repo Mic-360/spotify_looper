@@ -73,7 +73,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           child: Container(
             padding: EdgeInsets.only(bottom: safeAreaBottom),
             decoration: BoxDecoration(
-              color: const Color(0xFF0F0F0F).withOpacity(0.9),
+              color: const Color(0xFF0F0F0F).withValues(alpha: 0.9),
               border: const Border(
                 top: BorderSide(color: Colors.white10, width: 0.5),
               ),
@@ -101,7 +101,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                     width: 120,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.3),
+                      color: Colors.grey.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -164,7 +164,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                 border: Border.all(color: const Color(0xFF0F0F0F), width: 4),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF1DB954).withOpacity(0.3),
+                    color: const Color(0xFF1DB954).withValues(alpha: 0.3),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
