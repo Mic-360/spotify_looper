@@ -1,15 +1,26 @@
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/config/app_config.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/color_schemes.dart';
+import 'features/auth/providers/auth_provider.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const ProviderScope(child: SpotifyLooperApp()));
+
+  // Initialize shared preferences for persistence
+  final sharedPrefs = await SharedPreferences.getInstance();
+
+  runApp(
+    ProviderScope(
+      overrides: [sharedPreferencesProvider.overrideWithValue(sharedPrefs)],
+      child: const SpotifyLooperApp(),
+    ),
+  );
 }
 
 /// Root application widget with Material 3 Expressive theming.
