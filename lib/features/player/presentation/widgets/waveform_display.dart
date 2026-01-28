@@ -1,255 +1,296 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/spacing.dart';
 import '../../../../shared/models/playback_mode.dart';
 
-/// Waveform/progress display with section visualization.
 class WaveformDisplay extends StatelessWidget {
   final Duration duration;
   final Duration position;
   final SectionMarker? section;
   final PlaybackMode mode;
   final ValueChanged<Duration> onSeek;
+  final ValueChanged<Duration>? onSectionStartChanged;
+  final ValueChanged<Duration>? onSectionEndChanged;
 
   const WaveformDisplay({
     super.key,
     required this.duration,
     required this.position,
     this.section,
-    this.mode = PlaybackMode.normal,
+    required this.mode,
     required this.onSeek,
+    this.onSectionStartChanged,
+    this.onSectionEndChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
     return Column(
       children: [
-        // Waveform/Progress bar
-        GestureDetector(
-          onHorizontalDragUpdate: (details) {
-            final box = context.findRenderObject() as RenderBox?;
-            if (box != null) {
-              final width = box.size.width;
-              final position = details.localPosition.dx.clamp(0, width);
-              final percent = position / width;
-              final seekPosition = Duration(
-                milliseconds: (duration.inMilliseconds * percent).round(),
-              );
-              onSeek(seekPosition);
-            }
-          },
-          onTapDown: (details) {
-            final box = context.findRenderObject() as RenderBox?;
-            if (box != null) {
-              final width = box.size.width;
-              final position = details.localPosition.dx.clamp(0, width);
-              final percent = position / width;
-              final seekPosition = Duration(
-                milliseconds: (duration.inMilliseconds * percent).round(),
-              );
-              onSeek(seekPosition);
-            }
-          },
-          child: Container(
-            height: 48,
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: CustomPaint(
-                size: const Size(double.infinity, 48),
-                painter: _WaveformPainter(
-                  progress: duration.inMilliseconds > 0
-                      ? position.inMilliseconds / duration.inMilliseconds
-                      : 0,
-                  progressColor: colorScheme.primary,
-                  waveformColor: colorScheme.onSurfaceVariant.withValues(
-                    alpha: 0.3,
-                  ),
-                  section: section,
-                  totalDuration: duration,
-                  sectionColor: _getSectionColor(context),
-                  mode: mode,
-                ),
-              ),
-            ),
+        // Time Labels
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              __TimeLabel(duration: position),
+              __TimeLabel(duration: duration, isTotal: true),
+            ],
           ),
         ),
-        const SizedBox(height: Spacing.s),
-
-        // Time labels
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              _formatDuration(position),
-              style: textTheme.labelMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            if (section != null && mode != PlaybackMode.normal) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Spacing.s,
-                  vertical: Spacing.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: _getSectionColor(context).withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  mode == PlaybackMode.loop
-                      ? 'Loop: ${_formatDuration(section!.startTime)} - ${_formatDuration(section!.endTime)}'
-                      : 'Skip: ${_formatDuration(section!.startTime)} - ${_formatDuration(section!.endTime)}',
-                  style: textTheme.labelSmall?.copyWith(
-                    color: _getSectionColor(context),
+        const SizedBox(height: 16),
+        // Interactive Waveform
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: SizedBox(
+            height: 120,
+            width: double.infinity,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return GestureDetector(
+                  onHorizontalDragUpdate: (details) {
+                    final x = details.localPosition.dx.clamp(
+                      0.0,
+                      constraints.maxWidth,
+                    );
+                    final percent = x / constraints.maxWidth;
+                    onSeek(duration * percent);
+                  },
+                  onTapDown: (details) {
+                    final x = details.localPosition.dx.clamp(
+                      0.0,
+                      constraints.maxWidth,
+                    );
+                    final percent = x / constraints.maxWidth;
+                    onSeek(duration * percent);
+                  },
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // Base Waveform (inactive)
+                      CustomPaint(
+                        size: Size(constraints.maxWidth, 120),
+                        painter: _WaveformPainter(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          progress: 1.0,
+                          mode: PlaybackMode.normal,
+                        ),
+                      ),
+                      // Active Progress Waveform
+                      CustomPaint(
+                        size: Size(constraints.maxWidth, 120),
+                        painter: _WaveformPainter(
+                          color: _getModeColor(mode),
+                          progress:
+                              position.inMilliseconds / duration.inMilliseconds,
+                          mode: mode,
+                        ),
+                      ),
+                      // Section markers (if applicable)
+                      if (section != null) ...[
+                        _buildSectionShade(constraints.maxWidth),
+                        _buildHandle(
+                          constraints.maxWidth,
+                          section!.startTime,
+                          'T1',
+                          onSectionStartChanged,
+                        ),
+                        _buildHandle(
+                          constraints.maxWidth,
+                          section!.endTime,
+                          'T2',
+                          onSectionEndChanged,
+                        ),
+                      ],
+                    ],
                   ),
-                ),
-              ),
-            ],
-            Text(
-              _formatDuration(duration),
-              style: textTheme.labelMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+                );
+              },
             ),
-          ],
+          ),
         ),
       ],
     );
   }
 
-  String _formatDuration(Duration duration) {
-    final minutes = duration.inMinutes;
-    final seconds = duration.inSeconds % 60;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}';
+  Widget _buildHandle(
+    double width,
+    Duration time,
+    String label,
+    ValueChanged<Duration>? onChanged,
+  ) {
+    if (duration.inMilliseconds == 0) return const SizedBox.shrink();
+    final pos = (time.inMilliseconds / duration.inMilliseconds) * width;
+
+    return Positioned(
+      left: pos - 15,
+      top: -10,
+      bottom: -10,
+      child: GestureDetector(
+        onHorizontalDragUpdate: (details) {
+          if (onChanged == null) return;
+          final x = (pos + details.delta.dx).clamp(0.0, width);
+          onChanged(duration * (x / width));
+        },
+        child: Container(
+          width: 30,
+          color: Colors.transparent,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _HandleIndicator(label: label, color: _getModeColor(mode)),
+              Container(
+                width: 2,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: _getModeColor(mode),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _getModeColor(mode).withValues(alpha: 0.5),
+                      blurRadius: 4,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
-  Color _getSectionColor(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget _buildSectionShade(double width) {
+    if (duration.inMilliseconds == 0) return const SizedBox.shrink();
+    final start =
+        (section!.startTime.inMilliseconds / duration.inMilliseconds) * width;
+    final end =
+        (section!.endTime.inMilliseconds / duration.inMilliseconds) * width;
+
+    return Positioned(
+      left: start,
+      width: (end - start).clamp(0, width),
+      top: 0,
+      bottom: 0,
+      child: Container(
+        decoration: BoxDecoration(
+          color: _getModeColor(mode).withValues(alpha: 0.1),
+          border: Border.symmetric(
+            vertical: BorderSide(
+              color: _getModeColor(mode).withValues(alpha: 0.3),
+              width: 1,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Color _getModeColor(PlaybackMode mode) {
     switch (mode) {
       case PlaybackMode.normal:
-        return colorScheme.primary;
+        return const Color(0xFF1DB954);
       case PlaybackMode.loop:
-        return colorScheme.tertiary;
+        return const Color(0xFF10B981);
       case PlaybackMode.skip:
-        return colorScheme.error.withValues(alpha: 0.8);
+        return const Color(0xFFEF4444);
     }
   }
 }
 
+class __TimeLabel extends StatelessWidget {
+  final Duration duration;
+  final bool isTotal;
+
+  const __TimeLabel({required this.duration, this.isTotal = false});
+
+  @override
+  Widget build(BuildContext context) {
+    String twoDigits(int n) => n.toString().padLeft(2, "0");
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+
+    return Text(
+      "$minutes:$seconds",
+      style: TextStyle(
+        color: isTotal ? Colors.grey : Colors.white,
+        fontSize: 12,
+        fontWeight: isTotal ? FontWeight.normal : FontWeight.bold,
+        fontFamily: 'monospace',
+      ),
+    );
+  }
+}
+
+class _HandleIndicator extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _HandleIndicator({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(4),
+        boxShadow: [
+          BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 8),
+        ],
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.black,
+          fontSize: 8,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+}
+
 class _WaveformPainter extends CustomPainter {
+  final Color color;
   final double progress;
-  final Color progressColor;
-  final Color waveformColor;
-  final SectionMarker? section;
-  final Duration totalDuration;
-  final Color sectionColor;
   final PlaybackMode mode;
 
   _WaveformPainter({
+    required this.color,
     required this.progress,
-    required this.progressColor,
-    required this.waveformColor,
-    this.section,
-    required this.totalDuration,
-    required this.sectionColor,
     required this.mode,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final waveformPaint = Paint()
-      ..color = waveformColor
-      ..style = PaintingStyle.fill;
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
 
-    final progressPaint = Paint()
-      ..color = progressColor
-      ..style = PaintingStyle.fill;
-
-    // Draw section highlight if in loop/skip mode
-    if (section != null &&
-        mode != PlaybackMode.normal &&
-        totalDuration.inMilliseconds > 0) {
-      final sectionPaint = Paint()
-        ..color = sectionColor.withValues(alpha: 0.2)
-        ..style = PaintingStyle.fill;
-
-      final startX =
-          (section!.startTime.inMilliseconds / totalDuration.inMilliseconds) *
-          size.width;
-      final endX =
-          (section!.endTime.inMilliseconds / totalDuration.inMilliseconds) *
-          size.width;
-
-      canvas.drawRect(
-        Rect.fromLTRB(startX, 0, endX, size.height),
-        sectionPaint,
-      );
-
-      // Draw section borders
-      final borderPaint = Paint()
-        ..color = sectionColor
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2;
-
-      canvas.drawLine(
-        Offset(startX, 0),
-        Offset(startX, size.height),
-        borderPaint,
-      );
-      canvas.drawLine(Offset(endX, 0), Offset(endX, size.height), borderPaint);
-    }
-
-    // Draw waveform bars
-    final barCount = 50;
-    final barWidth = size.width / barCount;
-    final progressWidth = size.width * progress;
+    final barCount = 60;
+    final spacing = size.width / barCount;
+    final random = math.Random(42); // Seed for consistent waveform
 
     for (int i = 0; i < barCount; i++) {
-      // Generate pseudo-random heights based on position
-      final seed = (i * 17 + 7) % 13;
-      final heightPercent = 0.2 + (seed / 13) * 0.6;
-      final barHeight = size.height * heightPercent;
-      final x = i * barWidth;
-      final y = (size.height - barHeight) / 2;
+      final x = i * spacing + spacing / 2;
+      if (x / size.width > progress) continue;
 
-      final rect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(x + 1, y, barWidth - 2, barHeight),
-        const Radius.circular(2),
-      );
+      // Generate a "pseudo-random" height that looks like music
+      final noise = random.nextDouble();
+      final height = 20 + noise * 60 * (1 + math.sin(i * 0.2) * 0.5);
 
-      // Use progress color for bars before current position
-      if (x < progressWidth) {
-        canvas.drawRRect(rect, progressPaint);
-      } else {
-        canvas.drawRRect(rect, waveformPaint);
-      }
-    }
-
-    // Draw progress indicator
-    if (progress > 0 && progress < 1) {
-      final indicatorPaint = Paint()
-        ..color = progressColor
-        ..style = PaintingStyle.fill;
-
-      canvas.drawCircle(
-        Offset(progressWidth, size.height / 2),
-        6,
-        indicatorPaint,
+      canvas.drawLine(
+        Offset(x, (size.height - height) / 2),
+        Offset(x, (size.height + height) / 2),
+        paint,
       );
     }
   }
 
   @override
-  bool shouldRepaint(covariant _WaveformPainter oldDelegate) {
-    return progress != oldDelegate.progress ||
-        section != oldDelegate.section ||
-        mode != oldDelegate.mode;
-  }
+  bool shouldRepaint(_WaveformPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.progress != progress;
 }

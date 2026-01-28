@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,7 +11,6 @@ import '../../../shared/models/track.dart';
 import '../data/player_repository.dart';
 import 'widgets/mode_selector.dart';
 import 'widgets/playback_controls.dart';
-import 'widgets/section_selector.dart';
 import 'widgets/waveform_display.dart';
 
 /// Full-screen player with Pulse Loop aesthetic and glows.
@@ -68,14 +69,12 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
     final playbackState = ref.watch(playbackStateProvider);
     final playbackNotifier = ref.read(playbackStateProvider.notifier);
-
     final track = playbackState.currentTrack;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F),
+      backgroundColor: const Color(0xFF121212),
       body: Stack(
         children: [
           _buildBackgroundGlows(),
@@ -91,65 +90,31 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                           // App bar
                           _buildAppBar(context),
 
-                          // Main content
                           Expanded(
                             child: SingleChildScrollView(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: Spacing.xl,
-                              ),
+                              physics: const BouncingScrollPhysics(),
                               child: Column(
                                 children: [
-                                  const SizedBox(height: Spacing.xl),
+                                  const SizedBox(height: Spacing.m),
                                   // Album art
-                                  _buildAlbumArt(track),
-                                  const SizedBox(height: Spacing.xxl),
+                                  _buildAlbumArt(track, playbackState.mode),
+                                  const SizedBox(height: Spacing.xl),
 
                                   // Track info
-                                  _buildTrackInfo(track, textTheme),
-                                  const SizedBox(height: Spacing.xxl),
-
-                                  // Mode selector
-                                  ModeSelector(
-                                    currentMode: playbackState.mode,
-                                    onModeChanged: playbackNotifier.setMode,
-                                  ),
+                                  _buildTrackInfo(track),
                                   const SizedBox(height: Spacing.xl),
 
-                                  // Section selector (only for loop/skip modes)
-                                  if (playbackState.mode != PlaybackMode.normal)
-                                    SectionSelector(
-                                      totalDuration: track.duration,
-                                      sectionStart:
-                                          playbackState.section?.startTime,
-                                      sectionEnd:
-                                          playbackState.section?.endTime,
-                                      onStartChanged: (start) {
-                                        final currentSection =
-                                            playbackState.section ??
-                                            SectionMarker(
-                                              startTime: start,
-                                              endTime: track.duration,
-                                            );
-                                        playbackNotifier.setSection(
-                                          currentSection.copyWith(
-                                            startTime: start,
-                                          ),
-                                        );
-                                      },
-                                      onEndChanged: (end) {
-                                        final currentSection =
-                                            playbackState.section ??
-                                            SectionMarker(
-                                              startTime: Duration.zero,
-                                              endTime: end,
-                                            );
-                                        playbackNotifier.setSection(
-                                          currentSection.copyWith(endTime: end),
-                                        );
-                                      },
+                                  // Mode selector
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: Spacing.xl,
                                     ),
-                                  if (playbackState.mode != PlaybackMode.normal)
-                                    const SizedBox(height: Spacing.xl),
+                                    child: ModeSelector(
+                                      currentMode: playbackState.mode,
+                                      onModeChanged: playbackNotifier.setMode,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 32),
 
                                   // Waveform/Progress
                                   WaveformDisplay(
@@ -162,17 +127,48 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                                         : null,
                                     mode: playbackState.mode,
                                     onSeek: playbackNotifier.seek,
+                                    onSectionStartChanged: (start) {
+                                      final currentSection =
+                                          playbackState.section ??
+                                          SectionMarker(
+                                            startTime: start,
+                                            endTime: track.duration,
+                                          );
+                                      playbackNotifier.setSection(
+                                        currentSection.copyWith(
+                                          startTime: start,
+                                        ),
+                                      );
+                                    },
+                                    onSectionEndChanged: (end) {
+                                      final currentSection =
+                                          playbackState.section ??
+                                          SectionMarker(
+                                            startTime: Duration.zero,
+                                            endTime: end,
+                                          );
+                                      playbackNotifier.setSection(
+                                        currentSection.copyWith(endTime: end),
+                                      );
+                                    },
                                   ),
-                                  const SizedBox(height: Spacing.xl),
+
+                                  const SizedBox(height: 40),
 
                                   // Playback controls
-                                  PlaybackControls(
-                                    isPlaying: playbackState.isPlaying,
-                                    onPlayPause: playbackNotifier.togglePlay,
-                                    onPrevious: () {},
-                                    onNext: () {},
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: Spacing.xl,
+                                    ),
+                                    child: PlaybackControls(
+                                      isPlaying: playbackState.isPlaying,
+                                      onPlayPause: playbackNotifier.togglePlay,
+                                      onPrevious: () {},
+                                      onNext: () {},
+                                    ),
                                   ),
-                                  const SizedBox(height: Spacing.xxxl),
+
+                                  const SizedBox(height: 32),
                                 ],
                               ),
                             ),
@@ -202,32 +198,116 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
     });
   }
 
-  Widget _buildAlbumArt(Track track) {
-    return Hero(
-      tag: 'track-${track.id}',
-      child: Container(
-        width: 300,
-        height: 300,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.5),
-              blurRadius: 40,
-              offset: const Offset(0, 20),
+  Widget _buildAlbumArt(Track track, PlaybackMode mode) {
+    return Column(
+      children: [
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            // Background glow
+            Container(
+              width: 250,
+              height: 250,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1DB954).withValues(alpha: 0.15),
+                    blurRadius: 100,
+                    spreadRadius: 20,
+                  ),
+                ],
+              ),
             ),
+            // Art
+            Hero(
+              tag: 'track-${track.id}',
+              child: Container(
+                width: 280,
+                height: 280,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      blurRadius: 30,
+                      offset: const Offset(0, 15),
+                    ),
+                  ],
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: track.albumCoverUrl.isNotEmpty
+                    ? Image.network(
+                        track.albumCoverUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            _buildAlbumPlaceholder(),
+                      )
+                    : _buildAlbumPlaceholder(),
+              ),
+            ),
+            // Mode Badge
+            if (mode != PlaybackMode.normal)
+              Positioned(
+                top: 16,
+                right: 16,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.1),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _getModeColor(mode),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _getModeColor(
+                                    mode,
+                                  ).withValues(alpha: 0.5),
+                                  blurRadius: 4,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            mode == PlaybackMode.loop
+                                ? 'LOOP ACTIVE'
+                                : 'SKIP ACTIVE',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
-        clipBehavior: Clip.antiAlias,
-        child: track.albumCoverUrl.isNotEmpty
-            ? Image.network(
-                track.albumCoverUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    _buildAlbumPlaceholder(),
-              )
-            : _buildAlbumPlaceholder(),
-      ),
+      ],
     );
   }
 
@@ -242,36 +322,54 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
 
   Widget _buildAppBar(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: Spacing.s,
-        vertical: Spacing.s,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
             icon: const Icon(
-              Icons.keyboard_arrow_down_rounded,
+              Icons.expand_more_rounded,
               color: Colors.white,
               size: 32,
             ),
             onPressed: () => context.pop(),
-            tooltip: 'Close',
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white.withValues(alpha: 0.05),
+            ),
           ),
-          const Spacer(),
+          const Column(
+            children: [
+              Text(
+                'NOW PLAYING',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              SizedBox(height: 2),
+              Text(
+                'Cyber Collective',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
           IconButton(
             icon: const Icon(
-              Icons.favorite_border_rounded,
-              color: Colors.white70,
+              Icons.more_horiz_rounded,
+              color: Colors.white,
+              size: 28,
             ),
-            onPressed: _onAddToFavorites,
-            tooltip: 'Add to favorites',
-          ),
-          IconButton(
-            icon: const Icon(Icons.share_rounded, color: Colors.white70),
             onPressed: () {},
-            tooltip: 'Share',
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white.withValues(alpha: 0.05),
+            ),
           ),
-          const SizedBox(width: Spacing.s),
         ],
       ),
     );
@@ -281,17 +379,17 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
     return Positioned.fill(
       child: Stack(
         children: [
-          Container(color: const Color(0xFF0F0F0F)),
+          Container(color: const Color(0xFF121212)),
           _GlowBlob(
             top: -100,
             left: -100,
-            color: Colors.blue.withValues(alpha: 0.1),
+            color: const Color(0xFF1DB954).withValues(alpha: 0.08),
             size: 500,
           ),
           _GlowBlob(
             bottom: 100,
             right: -150,
-            color: const Color(0xFF1DB954).withValues(alpha: 0.05),
+            color: Colors.blue.withValues(alpha: 0.05),
             size: 400,
           ),
         ],
@@ -305,39 +403,70 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
     );
   }
 
-  Widget _buildTrackInfo(Track track, TextTheme textTheme) {
-    return Column(
-      children: [
-        Text(
-          track.name,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
+  Widget _buildTrackInfo(Track track) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: Spacing.xl),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  track.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: -0.5,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  track.artistName,
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        const SizedBox(height: Spacing.s),
-        Text(
-          track.artistName,
-          style: const TextStyle(color: Colors.white70, fontSize: 16),
-          textAlign: TextAlign.center,
-        ),
-      ],
+          IconButton(
+            icon: const Icon(
+              Icons.favorite_rounded,
+              color: Color(0xFF1DB954),
+              size: 32,
+            ),
+            onPressed: () {},
+          ),
+        ],
+      ),
     );
   }
 
+  Color _getModeColor(PlaybackMode mode) {
+    switch (mode) {
+      case PlaybackMode.normal:
+        return const Color(0xFF1DB954);
+      case PlaybackMode.loop:
+        return const Color(0xFF10B981);
+      case PlaybackMode.skip:
+        return const Color(0xFFEF4444);
+    }
+  }
+
   void _initializeTrack() {
-    // This is still a bit mocky but it's now integrated with the state notifier
     final mockTrack = Track(
       id: widget.trackId,
-      name: 'High Fidelity Track',
-      artistName: 'Premium Artist',
-      albumName: 'Expressive Album',
+      name: 'Neon Nights',
+      artistName: 'Cyber Collective',
+      albumName: 'Abstract Shapes',
       albumCoverUrl: 'https://picsum.photos/seed/${widget.trackId}/600/600',
-      duration: const Duration(minutes: 4, seconds: 20),
+      duration: const Duration(minutes: 3, seconds: 45),
       spotifyUri: 'spotify:track:${widget.trackId}',
     );
 
@@ -353,28 +482,17 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
         );
   }
 
-  void _onAddToFavorites() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Added track to favorites'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
   void _setupAnimations() {
     _entranceController = AnimationController(
       duration: AppDurations.medium,
       vsync: this,
     );
-
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _entranceController,
         curve: const Interval(0, 0.5, curve: Curves.easeOut),
       ),
     );
-
     _slideAnimation =
         Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
           CurvedAnimation(
@@ -382,7 +500,6 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
             curve: Curves.easeOutBack,
           ),
         );
-
     _entranceController.forward();
   }
 }
