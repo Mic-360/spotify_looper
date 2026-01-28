@@ -1,9 +1,11 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-/// Main scaffold with persistent bottom navigation.
+/// Main scaffold with persistent custom bottom navigation.
 ///
-/// Uses NavigationBar for compact screens and NavigationRail for expanded.
+/// Matches the high-fidelity Pulse Loop design with a central elevated Search button.
 class MainScaffold extends StatefulWidget {
   final Widget child;
 
@@ -15,29 +17,26 @@ class MainScaffold extends StatefulWidget {
 
 class _MainScaffoldState extends State<MainScaffold> {
   static const List<_NavDestination> _destinations = [
-    _NavDestination(
-      path: '/',
-      icon: Icons.home_outlined,
-      selectedIcon: Icons.home,
-      label: 'Home',
-    ),
-    _NavDestination(
-      path: '/favorites',
-      icon: Icons.favorite_outline,
-      selectedIcon: Icons.favorite,
-      label: 'Favorites',
-    ),
+    _NavDestination(path: '/', icon: Icons.home_rounded, label: 'Home'),
     _NavDestination(
       path: '/history',
-      icon: Icons.history_outlined,
-      selectedIcon: Icons.history,
+      icon: Icons.history_rounded,
       label: 'History',
     ),
     _NavDestination(
-      path: '/search',
-      icon: Icons.search_outlined,
-      selectedIcon: Icons.search,
+      path: '/search', // Middle FAB
+      icon: Icons.search_rounded,
       label: 'Search',
+    ),
+    _NavDestination(
+      path: '/favorites',
+      icon: Icons.favorite_rounded,
+      label: 'Favorites',
+    ),
+    _NavDestination(
+      path: '/settings',
+      icon: Icons.settings_rounded,
+      label: 'Settings',
     ),
   ];
 
@@ -48,50 +47,9 @@ class _MainScaffoldState extends State<MainScaffold> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isExpanded = screenWidth >= 840;
 
-    if (isExpanded) {
-      // Use NavigationRail for larger screens
-      return Scaffold(
-        body: Row(
-          children: [
-            NavigationRail(
-              selectedIndex: _selectedIndex,
-              onDestinationSelected: _onDestinationSelected,
-              leading: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: IconButton.filledTonal(
-                  onPressed: () => context.go('/settings'),
-                  icon: const Icon(Icons.settings),
-                  tooltip: 'Settings',
-                ),
-              ),
-              destinations: _destinations.map((d) {
-                return NavigationRailDestination(
-                  icon: Icon(d.icon),
-                  selectedIcon: Icon(d.selectedIcon),
-                  label: Text(d.label),
-                );
-              }).toList(),
-            ),
-            const VerticalDivider(width: 1, thickness: 1),
-            Expanded(child: widget.child),
-          ],
-        ),
-      );
-    }
-
-    // Use NavigationBar for compact screens
     return Scaffold(
-      body: widget.child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: _onDestinationSelected,
-        destinations: _destinations.map((d) {
-          return NavigationDestination(
-            icon: Icon(d.icon),
-            selectedIcon: Icon(d.selectedIcon),
-            label: d.label,
-          );
-        }).toList(),
+      body: Stack(
+        children: [widget.child, if (!isExpanded) _buildBottomNav(context)],
       ),
     );
   }
@@ -100,6 +58,128 @@ class _MainScaffoldState extends State<MainScaffold> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _updateSelectedIndex();
+  }
+
+  Widget _buildBottomNav(BuildContext context) {
+    final safeAreaBottom = MediaQuery.of(context).padding.bottom;
+
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            padding: EdgeInsets.only(bottom: safeAreaBottom),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F0F0F).withOpacity(0.9),
+              border: const Border(
+                top: BorderSide(color: Colors.white10, width: 0.5),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  height: 64,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildNavItem(0),
+                      _buildNavItem(1),
+                      _buildSearchItem(),
+                      _buildNavItem(3),
+                      _buildNavItem(4),
+                    ],
+                  ),
+                ),
+                // Home Indicator simulator
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, bottom: 8),
+                  child: Container(
+                    width: 120,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index) {
+    final destination = _destinations[index];
+    final isSelected = _selectedIndex == index;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => _onDestinationSelected(index),
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              destination.icon,
+              size: 24,
+              color: isSelected ? Colors.white : Colors.grey[500],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              destination.label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: isSelected ? Colors.white : Colors.grey[500],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchItem() {
+    const int index = 0;
+    // Special handling for the center search button which is elevated
+    return Expanded(
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          GestureDetector(
+            onTap: () => _onDestinationSelected(index),
+            child: Container(
+              width: 56,
+              height: 52,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1DB954), // Spotify Green
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFF0F0F0F), width: 4),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1DB954).withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.search_rounded,
+                size: 28,
+                color: Colors.black,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _onDestinationSelected(int index) {
@@ -121,13 +201,11 @@ class _MainScaffoldState extends State<MainScaffold> {
 class _NavDestination {
   final String path;
   final IconData icon;
-  final IconData selectedIcon;
   final String label;
 
   const _NavDestination({
     required this.path,
     required this.icon,
-    required this.selectedIcon,
     required this.label,
   });
 }

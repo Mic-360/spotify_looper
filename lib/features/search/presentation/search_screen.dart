@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/constants/durations.dart';
 import '../../../core/constants/spacing.dart';
 import '../../../shared/models/track.dart';
 import '../data/search_repository.dart';
 
-/// Search screen with real-time search functionality.
+/// Search screen with Pulse Loop aesthetic.
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
 
@@ -15,104 +14,96 @@ class SearchScreen extends ConsumerStatefulWidget {
   ConsumerState<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchResultItem extends StatefulWidget {
-  final Track track;
-  final int delay;
-  final VoidCallback? onTap;
+class _GlowBlob extends StatelessWidget {
+  final double? top;
+  final double? left;
+  final double? right;
+  final double? bottom;
+  final Color color;
+  final double size;
 
-  const _SearchResultItem({required this.track, this.delay = 0, this.onTap});
-
-  @override
-  State<_SearchResultItem> createState() => _SearchResultItemState();
-}
-
-class _SearchResultItemState extends State<_SearchResultItem>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
+  const _GlowBlob({this.top, this.left, this.right, this.bottom, required this.color, required this.size});
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: Spacing.s),
-        child: ListTile(
-          onTap: widget.onTap,
-          contentPadding: EdgeInsets.zero,
-          leading: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: SizedBox(
-              width: 56,
-              height: 56,
-              child: widget.track.albumCoverUrl.isNotEmpty
-                  ? Image.network(
-                      widget.track.albumCoverUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: colorScheme.surfaceContainerHighest,
-                        child: Icon(
-                          Icons.music_note,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    )
-                  : Container(
-                      color: colorScheme.surfaceContainerHighest,
-                      child: Icon(
-                        Icons.music_note,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
+    return Positioned(
+      top: top,
+      left: left,
+      right: right,
+      bottom: bottom,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: color,
+              blurRadius: 80,
+              spreadRadius: 20,
             ),
-          ),
-          title: Text(
-            widget.track.name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          subtitle: Text(
-            '${widget.track.artistName} • ${widget.track.formattedDuration}',
-            style: textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: IconButton(
-            icon: const Icon(Icons.play_circle_outline),
-            onPressed: widget.onTap,
-            tooltip: 'Play',
-          ),
+          ],
         ),
       ),
     );
   }
+}
+
+class _SearchResultTile extends StatelessWidget {
+  final Track track;
+  final int index;
+  final VoidCallback onTap;
+
+  const _SearchResultTile({required this.track, required this.index, required this.onTap});
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: AppDurations.medium,
-      vsync: this,
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: ListTile(
+        onTap: onTap,
+        contentPadding: const EdgeInsets.all(8),
+        leading: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Image.network(
+            track.albumCoverUrl,
+            width: 50,
+            height: 50,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              width: 50,
+              height: 50,
+              color: Colors.white10,
+              child: const Icon(Icons.music_note, color: Colors.white24),
+            ),
+          ),
+        ),
+        title: Text(
+          track.name,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text(
+          '${track.artistName} • ${track.formattedDuration}',
+          style: const TextStyle(color: Colors.grey, fontSize: 12),
+        ),
+        trailing: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.05),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.chevron_right_rounded, color: Colors.white54),
+        ),
+      ),
     );
-    _fadeAnimation = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
-
-    Future.delayed(Duration(milliseconds: widget.delay), () {
-      if (mounted) _controller.forward();
-    });
   }
 }
 
@@ -123,45 +114,82 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final searchResults = ref.watch(searchResultsProvider(_currentQuery));
     final textTheme = Theme.of(context).textTheme;
 
-    final searchResults = ref.watch(searchResultsProvider(_currentQuery));
-
     return Scaffold(
-      appBar: AppBar(title: const Text('Search')),
-      body: Column(
+      backgroundColor: const Color(0xFF0F0F0F),
+      body: Stack(
         children: [
-          // Search bar
-          Padding(
-            padding: const EdgeInsets.all(Spacing.l),
-            child: TextField(
-              controller: _searchController,
-              focusNode: _focusNode,
-              onChanged: (value) {
-                setState(() => _currentQuery = value);
-              },
-              decoration: InputDecoration(
-                hintText: 'Search for songs, artists...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: _clearSearch,
-                      )
-                    : null,
-              ),
-              textInputAction: TextInputAction.search,
-            ),
-          ),
+          // Background Glows
+          _buildBackgroundGlows(),
 
-          // Results
-          Expanded(
-            child: searchResults.when(
-              data: (tracks) =>
-                  _buildResultsList(tracks, colorScheme, textTheme),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => _buildError(err, colorScheme, textTheme),
+          SafeArea(
+            child: Column(
+              children: [
+                // Header & Search Input
+                Padding(
+                  padding: const EdgeInsets.all(Spacing.xl),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Search',
+                        style: textTheme.headlineMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: Spacing.l),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: Spacing.l),
+                        height: 54,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.search_rounded, color: Colors.grey),
+                            const SizedBox(width: Spacing.s),
+                            Expanded(
+                              child: TextField(
+                                controller: _searchController,
+                                focusNode: _focusNode,
+                                onChanged: (value) {
+                                  setState(() => _currentQuery = value);
+                                },
+                                decoration: InputDecoration(
+                                  hintText: 'Artists, tracks, or vibes...',
+                                  hintStyle: textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                ),
+                                style: const TextStyle(color: Colors.white),
+                                textInputAction: TextInputAction.search,
+                              ),
+                            ),
+                            if (_currentQuery.isNotEmpty)
+                              IconButton(
+                                icon: const Icon(Icons.clear_rounded, color: Colors.grey, size: 20),
+                                onPressed: _clearSearch,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Results
+                Expanded(
+                  child: searchResults.when(
+                    data: (tracks) => _buildResultsList(tracks),
+                    loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF1DB954))),
+                    error: (err, stack) => _buildError(err),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -176,96 +204,98 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     super.dispose();
   }
 
-  Widget _buildEmptyState(ColorScheme colorScheme, TextTheme textTheme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+  @override
+  void initState() {
+    super.initState();
+    // Auto-focus search if navigation was triggered from FAB
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) _focusNode.requestFocus();
+    });
+  }
+
+  Widget _buildBackgroundGlows() {
+    return Positioned.fill(
+      child: Stack(
         children: [
-          Icon(Icons.search, size: 64, color: colorScheme.onSurfaceVariant),
-          const SizedBox(height: Spacing.l),
-          Text('Search for music', style: textTheme.titleLarge),
-          const SizedBox(height: Spacing.s),
-          Text(
-            'Find songs to loop or skip sections',
-            style: textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
+          Container(color: const Color(0xFF0F0F0F)),
+          _GlowBlob(
+            top: 100,
+            left: -100,
+            color: Colors.blue.withOpacity(0.1),
+            size: 400,
+          ),
+          _GlowBlob(
+            bottom: -50,
+            right: -50,
+            color: const Color(0xFF1DB954).withOpacity(0.05),
+            size: 300,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildError(
-    Object error,
-    ColorScheme colorScheme,
-    TextTheme textTheme,
-  ) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(Spacing.xl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: colorScheme.error),
-            const SizedBox(height: Spacing.l),
-            Text('Playback Error', style: textTheme.titleLarge),
-            const SizedBox(height: Spacing.s),
-            Text(
-              'Make sure you have an active Spotify session.',
-              textAlign: TextAlign.center,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNoResults(ColorScheme colorScheme, TextTheme textTheme) {
+  Widget _buildEmptyState() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.search_off, size: 64, color: colorScheme.onSurfaceVariant),
+          Icon(Icons.search_rounded, size: 80, color: Colors.white.withOpacity(0.05)),
           const SizedBox(height: Spacing.l),
-          Text('No results found', style: textTheme.titleLarge),
+          const Text(
+            'Discover Music',
+            style: TextStyle(color: Colors.white54, fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: Spacing.s),
-          Text(
-            'Try different keywords',
-            style: textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
+          const Text(
+            'Search for tracks to loop and remix',
+            style: TextStyle(color: Colors.grey, fontSize: 14),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildResultsList(
-    List<Track> tracks,
-    ColorScheme colorScheme,
-    TextTheme textTheme,
-  ) {
-    if (_searchController.text.isEmpty) {
-      return _buildEmptyState(colorScheme, textTheme);
+  Widget _buildError(Object error) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline_rounded, color: Colors.redAccent),
+          const SizedBox(height: Spacing.m),
+          const Text('Search failed. Check your connection.', style: TextStyle(color: Colors.grey)),
+          TextButton(
+            onPressed: () => ref.invalidate(searchResultsProvider(_currentQuery)),
+            child: const Text('Retry', style: TextStyle(color: Color(0xFF1DB954))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoResults() {
+    return const Center(
+      child: Text('No tracks found.', style: TextStyle(color: Colors.grey)),
+    );
+  }
+
+  Widget _buildResultsList(List<Track> tracks) {
+    if (_currentQuery.isEmpty) {
+      return _buildEmptyState();
     }
 
     if (tracks.isEmpty) {
-      return _buildNoResults(colorScheme, textTheme);
+      return _buildNoResults();
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: Spacing.l),
+      padding: const EdgeInsets.symmetric(horizontal: Spacing.xl),
       itemCount: tracks.length,
       itemBuilder: (context, index) {
-        final track = tracks[index];
-        return _SearchResultItem(
-          track: track,
-          delay: index * 30,
-          onTap: () => context.go('/player/${track.id}'),
+        return _SearchResultTile(
+          track: tracks[index],
+          index: index,
+          onTap: () => context.go('/player/${tracks[index].id}'),
         );
       },
     );
@@ -273,9 +303,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   void _clearSearch() {
     _searchController.clear();
-    setState(() {
-      _currentQuery = '';
-    });
-    _focusNode.requestFocus();
+    setState(() => _currentQuery = '');
   }
 }

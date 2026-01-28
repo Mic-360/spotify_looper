@@ -4,10 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/spacing.dart';
 import '../../../shared/models/playback_mode.dart';
 import '../../../shared/models/track.dart';
-import '../../../shared/widgets/loading_indicator.dart';
-import 'widgets/favorite_list_item.dart';
 
-/// Favorites screen showing saved tracks with their modes.
+/// Favorites screen with Pulse Loop aesthetic.
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
 
@@ -39,104 +37,90 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Favorites'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.import_export),
-            onPressed: () => _showImportExportSheet(context),
-            tooltip: 'Import/Export',
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? const LoadingOverlay(message: 'Loading favorites...')
-          : Column(
+      backgroundColor: const Color(0xFF0F0F0F),
+      body: Stack(
+        children: [
+          _buildBackgroundGlows(),
+          SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Filter chips
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: Spacing.l,
-                    vertical: Spacing.m,
-                  ),
+                Padding(
+                  padding: const EdgeInsets.all(Spacing.xl),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      FilterChip(
-                        label: const Text('All'),
-                        selected: _filterMode == null,
-                        onSelected: (_) => setState(() => _filterMode = null),
-                      ),
-                      const SizedBox(width: Spacing.s),
-                      FilterChip(
-                        label: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.repeat_one,
-                              size: 16,
-                              color: _filterMode == PlaybackMode.loop
-                                  ? colorScheme.onSecondaryContainer
-                                  : null,
-                            ),
-                            const SizedBox(width: Spacing.xs),
-                            const Text('Loop'),
-                          ],
+                      Text(
+                        'Favorites',
+                        style: textTheme.headlineMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
                         ),
-                        selected: _filterMode == PlaybackMode.loop,
-                        onSelected: (_) => setState(() {
-                          _filterMode = _filterMode == PlaybackMode.loop
-                              ? null
-                              : PlaybackMode.loop;
-                        }),
                       ),
-                      const SizedBox(width: Spacing.s),
-                      FilterChip(
-                        label: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.skip_next,
-                              size: 16,
-                              color: _filterMode == PlaybackMode.skip
-                                  ? colorScheme.onSecondaryContainer
-                                  : null,
-                            ),
-                            const SizedBox(width: Spacing.xs),
-                            const Text('Skip'),
-                          ],
+                      IconButton(
+                        icon: const Icon(
+                          Icons.import_export_rounded,
+                          color: Colors.grey,
                         ),
-                        selected: _filterMode == PlaybackMode.skip,
-                        onSelected: (_) => setState(() {
-                          _filterMode = _filterMode == PlaybackMode.skip
-                              ? null
-                              : PlaybackMode.skip;
-                        }),
+                        onPressed: () => _showImportExportSheet(context),
                       ),
                     ],
                   ),
                 ),
 
-                // Favorites list
+                // Filter chips
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: Spacing.xl),
+                  child: Row(
+                    children: [
+                      _FilterChip(
+                        label: 'All',
+                        isSelected: _filterMode == null,
+                        onTap: () => setState(() => _filterMode = null),
+                      ),
+                      const SizedBox(width: 8),
+                      _FilterChip(
+                        label: 'Loops',
+                        isSelected: _filterMode == PlaybackMode.loop,
+                        onTap: () =>
+                            setState(() => _filterMode = PlaybackMode.loop),
+                      ),
+                      const SizedBox(width: 8),
+                      _FilterChip(
+                        label: 'Skips',
+                        isSelected: _filterMode == PlaybackMode.skip,
+                        onTap: () =>
+                            setState(() => _filterMode = PlaybackMode.skip),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: Spacing.l),
+
                 Expanded(
-                  child: _filteredFavorites.isEmpty
-                      ? _buildEmptyState(colorScheme, textTheme)
+                  child: _isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF1DB954),
+                          ),
+                        )
+                      : _filteredFavorites.isEmpty
+                      ? _buildEmptyState()
                       : ListView.builder(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: Spacing.l,
+                            horizontal: Spacing.xl,
                           ),
                           itemCount: _filteredFavorites.length,
                           itemBuilder: (context, index) {
-                            return FavoriteListItem(
-                              item: _filteredFavorites[index],
-                              delay: index * 50,
-                              onTap: () => context.go(
-                                '/player/${_filteredFavorites[index].track.id}',
-                              ),
+                            final item = _filteredFavorites[index];
+                            return _FavoriteTile(
+                              item: item,
+                              onTap: () =>
+                                  context.go('/player/${item.track.id}'),
                               onDelete: () => _deleteFavorite(index),
                             );
                           },
@@ -144,6 +128,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -153,38 +140,50 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     _loadFavorites();
   }
 
-  Widget _buildEmptyState(ColorScheme colorScheme, TextTheme textTheme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+  Widget _buildBackgroundGlows() {
+    return Positioned.fill(
+      child: Stack(
         children: [
-          Icon(
-            Icons.favorite_outline,
-            size: 64,
-            color: colorScheme.onSurfaceVariant,
+          Container(color: const Color(0xFF0F0F0F)),
+          _GlowBlob(
+            top: 200,
+            right: -100,
+            color: const Color(0xFF1DB954).withOpacity(0.05),
+            size: 400,
           ),
-          const SizedBox(height: Spacing.l),
-          Text('No favorites yet', style: textTheme.titleLarge),
-          const SizedBox(height: Spacing.s),
-          Text(
-            'Save tracks with loop or skip modes\nto see them here',
-            style: textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.center,
+          _GlowBlob(
+            bottom: -50,
+            left: 50,
+            color: Colors.blue.withOpacity(0.08),
+            size: 300,
           ),
         ],
       ),
     );
   }
 
+  Widget _buildEmptyState() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.favorite_rounded, size: 64, color: Colors.white10),
+          SizedBox(height: Spacing.m),
+          Text('No favorites yet.', style: TextStyle(color: Colors.grey)),
+        ],
+      ),
+    );
+  }
+
   void _deleteFavorite(int index) {
-    setState(() {
-      _favorites.removeAt(index);
-    });
+    setState(() => _favorites.removeAt(index));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Removed from favorites'),
+        backgroundColor: Color(0xFF1A1A1A),
+        content: Text(
+          'Removed from favorites',
+          style: TextStyle(color: Colors.white),
+        ),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -195,52 +194,35 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       FavoriteTrackItem(
         track: Track(
           id: 'fav_1',
-          name: 'Bohemian Rhapsody',
-          artistName: 'Queen',
-          albumName: 'A Night at the Opera',
+          name: 'Midnight City',
+          artistName: 'M83',
+          albumName: 'Hurry Up, We\'re Dreaming',
           albumCoverUrl: 'https://picsum.photos/seed/fav1/300/300',
-          duration: const Duration(minutes: 5, seconds: 55),
+          duration: const Duration(minutes: 4, seconds: 03),
           spotifyUri: 'spotify:track:fav_1',
         ),
         mode: PlaybackMode.loop,
         section: SectionMarker(
-          startTime: const Duration(minutes: 3, seconds: 30),
-          endTime: const Duration(minutes: 4, seconds: 45),
-          label: 'Guitar Solo',
+          startTime: const Duration(minutes: 1, seconds: 30),
+          endTime: const Duration(minutes: 2, seconds: 05),
+          label: 'Chorus Loop',
         ),
       ),
       FavoriteTrackItem(
         track: Track(
           id: 'fav_2',
-          name: 'Stairway to Heaven',
-          artistName: 'Led Zeppelin',
-          albumName: 'Led Zeppelin IV',
+          name: 'Stargazing',
+          artistName: 'Travis Scott',
+          albumName: 'Astroworld',
           albumCoverUrl: 'https://picsum.photos/seed/fav2/300/300',
-          duration: const Duration(minutes: 8, seconds: 2),
+          duration: const Duration(minutes: 4, seconds: 30),
           spotifyUri: 'spotify:track:fav_2',
         ),
         mode: PlaybackMode.skip,
         section: SectionMarker(
           startTime: Duration.zero,
-          endTime: const Duration(minutes: 1, seconds: 30),
-          label: 'Intro',
-        ),
-      ),
-      FavoriteTrackItem(
-        track: Track(
-          id: 'fav_3',
-          name: 'Hotel California',
-          artistName: 'Eagles',
-          albumName: 'Hotel California',
-          albumCoverUrl: 'https://picsum.photos/seed/fav3/300/300',
-          duration: const Duration(minutes: 6, seconds: 30),
-          spotifyUri: 'spotify:track:fav_3',
-        ),
-        mode: PlaybackMode.loop,
-        section: SectionMarker(
-          startTime: const Duration(minutes: 4, seconds: 30),
-          endTime: const Duration(minutes: 6, seconds: 20),
-          label: 'Outro Solo',
+          endTime: const Duration(minutes: 0, seconds: 45),
+          label: 'Skit',
         ),
       ),
     ];
@@ -248,7 +230,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   Future<void> _loadFavorites() async {
     await Future.delayed(const Duration(milliseconds: 600));
-
     if (mounted) {
       setState(() {
         _isLoading = false;
@@ -259,47 +240,228 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   void _showImportExportSheet(BuildContext context) {
     showModalBottomSheet(
+      backgroundColor: const Color(0xFF1A1A1A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       context: context,
       builder: (context) => Padding(
         padding: const EdgeInsets.all(Spacing.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Import/Export',
-              style: Theme.of(context).textTheme.titleLarge,
+            const Text(
+              'Backup',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: Spacing.xl),
-            ListTile(
-              leading: const Icon(Icons.upload_file),
-              title: const Text('Import favorites'),
-              subtitle: const Text('Load from file'),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Implement import
-              },
+            _SheetTile(
+              icon: Icons.upload_rounded,
+              title: 'Import Data',
+              onTap: () => Navigator.pop(context),
             ),
-            ListTile(
-              leading: const Icon(Icons.download),
-              title: const Text('Export favorites'),
-              subtitle: const Text('Save to file'),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Implement export
-              },
+            _SheetTile(
+              icon: Icons.download_rounded,
+              title: 'Export Data',
+              onTap: () => Navigator.pop(context),
             ),
-            ListTile(
-              leading: const Icon(Icons.share),
-              title: const Text('Share favorites'),
-              subtitle: const Text('Share with others'),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Implement share
-              },
+            _SheetTile(
+              icon: Icons.share_rounded,
+              title: 'Share List',
+              onTap: () => Navigator.pop(context),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _FavoriteTile extends StatelessWidget {
+  final FavoriteTrackItem item;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  const _FavoriteTile({
+    required this.item,
+    required this.onTap,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.network(
+              item.track.albumCoverUrl,
+              width: 60,
+              height: 60,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.track.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  item.track.artistName,
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(
+                      item.mode == PlaybackMode.loop
+                          ? Icons.repeat_rounded
+                          : Icons.skip_next_rounded,
+                      size: 14,
+                      color: const Color(0xFF1DB954),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      item.section?.label ??
+                          (item.mode == PlaybackMode.loop ? 'Loop' : 'Skip'),
+                      style: const TextStyle(
+                        color: Color(0xFF1DB954),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.play_arrow_rounded, color: Colors.white70),
+            onPressed: onTap,
+          ),
+          IconButton(
+            icon: const Icon(
+              Icons.delete_outline_rounded,
+              color: Colors.redAccent,
+              size: 20,
+            ),
+            onPressed: onDelete,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _FilterChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFF1DB954)
+              : Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.black : Colors.grey,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GlowBlob extends StatelessWidget {
+  final double? top;
+  final double? left;
+  final double? right;
+  final double? bottom;
+  final Color color;
+  final double size;
+
+  const _GlowBlob({
+    this.top,
+    this.left,
+    this.right,
+    this.bottom,
+    required this.color,
+    required this.size,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      top: top,
+      left: left,
+      right: right,
+      bottom: bottom,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(color: color, blurRadius: 80, spreadRadius: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SheetTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  const _SheetTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.white70),
+      title: Text(title, style: const TextStyle(color: Colors.white)),
+      onTap: onTap,
     );
   }
 }

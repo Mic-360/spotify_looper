@@ -77,6 +77,14 @@ final GoRouter router = GoRouter(
           pageBuilder: (context, state) =>
               const NoTransitionPage(child: SearchScreen()),
         ),
+
+        // Settings
+        GoRoute(
+          path: '/settings',
+          name: 'settings',
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: SettingsScreen()),
+        ),
       ],
     ),
 
@@ -88,13 +96,6 @@ final GoRouter router = GoRouter(
         final trackId = state.pathParameters['trackId'] ?? '';
         return PlayerScreen(trackId: trackId);
       },
-    ),
-
-    // Settings
-    GoRoute(
-      path: '/settings',
-      name: 'settings',
-      builder: (context, state) => const SettingsScreen(),
     ),
   ],
 

@@ -4,248 +4,211 @@ import 'package:go_router/go_router.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/constants/spacing.dart';
 
-/// Settings screen with user profile and app options.
+/// Settings screen with Pulse Loop aesthetic.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(Spacing.l),
+      backgroundColor: const Color(0xFF0F0F0F),
+      body: Stack(
         children: [
-          // Profile section
-          _buildProfileCard(context, colorScheme, textTheme),
-          const SizedBox(height: Spacing.xl),
-
-          // Playback section
-          _buildSectionHeader(context, 'Playback'),
-          _SettingsTile(
-            icon: Icons.speed,
-            title: 'Default animation speed',
-            subtitle: 'Normal',
-            onTap: () {},
-          ),
-          _SettingsTile(
-            icon: Icons.timer,
-            title: 'Loop count',
-            subtitle: 'Infinite',
-            onTap: () {},
-          ),
-          const SizedBox(height: Spacing.xl),
-
-          // Appearance section
-          _buildSectionHeader(context, 'Appearance'),
-          _SettingsTile(
-            icon: Icons.palette,
-            title: 'Theme',
-            subtitle: 'System',
-            onTap: () => _showThemeDialog(context),
-          ),
-          _SettingsTile(
-            icon: Icons.text_fields,
-            title: 'Text size',
-            subtitle: 'Default',
-            onTap: () {},
-          ),
-          const SizedBox(height: Spacing.xl),
-
-          // Data section
-          _buildSectionHeader(context, 'Data'),
-          _SettingsTile(
-            icon: Icons.download,
-            title: 'Export favorites',
-            subtitle: 'Save to file',
-            onTap: () {},
-          ),
-          _SettingsTile(
-            icon: Icons.upload_file,
-            title: 'Import favorites',
-            subtitle: 'Load from file',
-            onTap: () {},
-          ),
-          _SettingsTile(
-            icon: Icons.delete_outline,
-            title: 'Clear data',
-            subtitle: 'Remove all saved data',
-            onTap: () => _showClearDataDialog(context),
-            isDestructive: true,
-          ),
-          const SizedBox(height: Spacing.xl),
-
-          // About section
-          _buildSectionHeader(context, 'About'),
-          _SettingsTile(
-            icon: Icons.info_outline,
-            title: 'Version',
-            subtitle: AppConfig.appVersion,
-            onTap: () {},
-          ),
-          _SettingsTile(
-            icon: Icons.description_outlined,
-            title: 'Licenses',
-            subtitle: 'Open source licenses',
-            onTap: () => showLicensePage(
-              context: context,
-              applicationName: AppConfig.appName,
-              applicationVersion: AppConfig.appVersion,
-            ),
-          ),
-          _SettingsTile(
-            icon: Icons.privacy_tip_outlined,
-            title: 'Privacy Policy',
-            onTap: () {},
-          ),
-          const SizedBox(height: Spacing.xl),
-
-          // Logout
-          FilledButton.tonal(
-            onPressed: () => _showLogoutDialog(context),
-            style: FilledButton.styleFrom(
-              foregroundColor: colorScheme.error,
-              backgroundColor: colorScheme.errorContainer.withOpacity(0.5),
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+          _buildBackgroundGlows(),
+          SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: Spacing.xl),
               children: [
-                Icon(Icons.logout),
-                SizedBox(width: Spacing.s),
-                Text('Log out'),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: Spacing.xl),
+                  child: Text(
+                    'Settings',
+                    style: textTheme.headlineMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+
+                // Profile card
+                _buildProfileCard(context),
+                const SizedBox(height: Spacing.xl),
+
+                _buildSectionHeader(context, 'Playback'),
+                _SettingsTile(
+                  icon: Icons.speed_rounded,
+                  title: 'Default Speed',
+                  subtitle: 'Normal',
+                ),
+                _SettingsTile(
+                  icon: Icons.timer_rounded,
+                  title: 'Loop Count',
+                  subtitle: 'Infinite',
+                ),
+                const SizedBox(height: Spacing.xl),
+
+                _buildSectionHeader(context, 'Preferences'),
+                _SettingsTile(
+                  icon: Icons.palette_rounded,
+                  title: 'Theme',
+                  subtitle: 'Amoled Dark',
+                ),
+                _SettingsTile(
+                  icon: Icons.notifications_none_rounded,
+                  title: 'Notifications',
+                  subtitle: 'Enabled',
+                ),
+                const SizedBox(height: Spacing.xl),
+
+                _buildSectionHeader(context, 'System'),
+                _SettingsTile(
+                  icon: Icons.download_rounded,
+                  title: 'Export Favorites',
+                ),
+                _SettingsTile(
+                  icon: Icons.delete_outline_rounded,
+                  title: 'Clear Cache',
+                  isDestructive: true,
+                ),
+                const SizedBox(height: Spacing.xl),
+
+                _buildSectionHeader(context, 'About'),
+                _SettingsTile(
+                  icon: Icons.info_outline_rounded,
+                  title: 'Version',
+                  subtitle: AppConfig.appVersion,
+                ),
+                _SettingsTile(
+                  icon: Icons.description_outlined,
+                  title: 'Licenses',
+                ),
+
+                const SizedBox(height: Spacing.xl),
+
+                // Logout button
+                OutlinedButton(
+                  onPressed: () => _showLogoutDialog(context),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.redAccent,
+                    side: const BorderSide(color: Colors.redAccent, width: 1.5),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Text(
+                    'LOG OUT',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 100),
               ],
             ),
           ),
-          const SizedBox(height: Spacing.xxxl),
         ],
       ),
     );
   }
 
-  Widget _buildProfileCard(
-    BuildContext context,
-    ColorScheme colorScheme,
-    TextTheme textTheme,
-  ) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(Spacing.l),
-        child: Row(
-          children: [
-            // Avatar
-            CircleAvatar(
-              radius: 32,
-              backgroundColor: colorScheme.primaryContainer,
-              child: Icon(
-                Icons.person,
-                size: 32,
-                color: colorScheme.onPrimaryContainer,
+  Widget _buildBackgroundGlows() {
+    return Positioned.fill(
+      child: Stack(
+        children: [
+          Container(color: const Color(0xFF0F0F0F)),
+          _GlowBlob(
+            top: 200,
+            left: -100,
+            color: Colors.blue.withOpacity(0.05),
+            size: 400,
+          ),
+          _GlowBlob(
+            bottom: 50,
+            right: -50,
+            color: Colors.purple.withOpacity(0.05),
+            size: 300,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              image: DecorationImage(
+                image: NetworkImage(
+                  'https://lh3.googleusercontent.com/a/ACg8ocL-f_Xm_k_T_Z_T_Z_T_Z_T_Z_T_Z_T_Z_T_Z_T_Z_T_Z_T_Z_T=s96-c',
+                ),
+                fit: BoxFit.cover,
               ),
             ),
-            const SizedBox(width: Spacing.l),
-
-            // User info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'User Name',
-                    style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Alex Pulse',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(height: Spacing.xs),
-                  Text(
-                    'user@example.com',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Premium Member',
+                  style: TextStyle(
+                    color: const Color(0xFF1DB954).withOpacity(0.8),
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(height: Spacing.xs),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: Spacing.s,
-                      vertical: Spacing.xs,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colorScheme.tertiaryContainer,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'Spotify Premium',
-                      style: textTheme.labelSmall?.copyWith(
-                        color: colorScheme.onTertiaryContainer,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-
-            // Edit button
-            IconButton(
-              icon: const Icon(Icons.edit_outlined),
-              onPressed: () {},
-              tooltip: 'Edit profile',
+          ),
+          IconButton(
+            icon: const Icon(
+              Icons.edit_rounded,
+              color: Colors.white54,
+              size: 20,
             ),
-          ],
-        ),
+            onPressed: () {},
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: Spacing.s, bottom: Spacing.s),
+      padding: const EdgeInsets.only(left: 8, bottom: 12),
       child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-          color: Theme.of(context).colorScheme.primary,
-          fontWeight: FontWeight.w600,
+        title.toUpperCase(),
+        style: const TextStyle(
+          color: Colors.grey,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.5,
         ),
-      ),
-    );
-  }
-
-  void _showClearDataDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Clear all data'),
-        content: const Text(
-          'This will remove all your favorites, history, and settings. This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('All data cleared'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('Clear'),
-          ),
-        ],
       ),
     );
   }
@@ -254,51 +217,62 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Log out'),
-        content: const Text('Are you sure you want to log out?'),
+        backgroundColor: const Color(0xFF1A1A1A),
+        title: const Text('Log out', style: TextStyle(color: Colors.white)),
+        content: const Text(
+          'Are you sure you want to log out of Pulse Loop?',
+          style: TextStyle(color: Colors.white70),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
             onPressed: () {
               Navigator.pop(context);
               context.go('/login');
             },
-            child: const Text('Log out'),
+            child: const Text('Log out', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
   }
+}
 
-  void _showThemeDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Theme'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RadioListTile<String>(
-              title: const Text('System'),
-              value: 'system',
-              groupValue: 'system',
-              onChanged: (value) => Navigator.pop(context),
-            ),
-            RadioListTile<String>(
-              title: const Text('Light'),
-              value: 'light',
-              groupValue: 'system',
-              onChanged: (value) => Navigator.pop(context),
-            ),
-            RadioListTile<String>(
-              title: const Text('Dark'),
-              value: 'dark',
-              groupValue: 'system',
-              onChanged: (value) => Navigator.pop(context),
-            ),
+class _GlowBlob extends StatelessWidget {
+  final double? top;
+  final double? left;
+  final double? right;
+  final double? bottom;
+  final Color color;
+  final double size;
+
+  const _GlowBlob({
+    this.top,
+    this.left,
+    this.right,
+    this.bottom,
+    required this.color,
+    required this.size,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      top: top,
+      left: left,
+      right: right,
+      bottom: bottom,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(color: color, blurRadius: 80, spreadRadius: 20),
           ],
         ),
       ),
@@ -310,30 +284,48 @@ class _SettingsTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String? subtitle;
-  final VoidCallback? onTap;
   final bool isDestructive;
 
   const _SettingsTile({
     required this.icon,
     required this.title,
     this.subtitle,
-    this.onTap,
     this.isDestructive = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return ListTile(
-      leading: Icon(icon, color: isDestructive ? colorScheme.error : null),
-      title: Text(
-        title,
-        style: TextStyle(color: isDestructive ? colorScheme.error : null),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
-      subtitle: subtitle != null ? Text(subtitle!) : null,
-      trailing: const Icon(Icons.chevron_right),
-      onTap: onTap,
+      child: ListTile(
+        leading: Icon(
+          icon,
+          color: isDestructive ? Colors.redAccent : Colors.white70,
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: isDestructive ? Colors.redAccent : Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        subtitle: subtitle != null
+            ? Text(
+                subtitle!,
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              )
+            : null,
+        trailing: const Icon(
+          Icons.chevron_right_rounded,
+          color: Colors.white24,
+        ),
+        onTap: () {},
+      ),
     );
   }
 }
