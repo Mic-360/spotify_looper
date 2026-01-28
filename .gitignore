@@ -11,6 +11,19 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+.env*
+
+# Firebase related
+firebase-debug.log
+firebase-errors.log
+.firebaserc
+.firebase/
+firebase.json
+
+# GitHub
+.github/
+docs/
+
 
 # IntelliJ related
 *.iml
