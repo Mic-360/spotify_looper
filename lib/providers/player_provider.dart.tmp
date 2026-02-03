@@ -1,0 +1,87 @@
+/// Player state provider for playback control.
+library;
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../models/track.dart';
+import '../services/spotify_api_service.dart';
+import '../services/spotify_player_service.dart';
+import 'auth_provider.dart';
+
+enum PlayerMode {
+  normal,
+  loop,
+  skip,
+}
+
+/// Player state
+class PlaybackState {
+  final bool isPlaying;
+  final bool isPaused;
+  final SpotifyTrack? currentTrack;
+  final int positionMs;
+  final int durationMs;
+  final String? deviceId;
+  final bool isWebPlayer;
+  final String? error;
+  final PlayerMode mode;
+  final int loopStartMs;
+  final int loopEndMs;
+
+  const PlaybackState({
+    this.isPlaying = false,
+    this.isPaused = false,
+    this.currentTrack,
+    this.positionMs = 0,
+    this.durationMs = 0,
+    this.deviceId,
+    this.isWebPlayer = false,
+    this.error,
+    this.mode = PlayerMode.normal,
+    this.loopStartMs = 0,
+    this.loopEndMs = 0,
+  });
+
+  double get progress => durationMs > 0 ? positionMs / durationMs : 0;
+
+  String get formattedPosition {
+    final minutes = positionMs ~/ 60000;
+    final seconds = (positionMs % 60000) ~/ 1000;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  String get formattedDuration {
+    final minutes = durationMs ~/ 60000;
+    final seconds = (durationMs % 60000) ~/ 1000;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  PlaybackState copyWith({
+    bool? isPlaying,
+    bool? isPaused,
+    SpotifyTrack? currentTrack,
+    int? positionMs,
+    int? durationMs,
+    String? deviceId,
+    bool? isWebPlayer,
+    String? error,
+    PlayerMode? mode,
+    int? loopStartMs,
+    int? loopEndMs,
+  }) => PlaybackState(
+    isPlaying: isPlaying ?? this.isPlaying,
+    isPaused: isPaused ?? this.isPaused,
+    currentTrack: currentTrack ?? this.currentTrack,
+    positionMs: positionMs ?? this.positionMs,
+    durationMs: durationMs ?? this.durationMs,
+    deviceId: deviceId ?? this.deviceId,
+    isWebPlayer: isWebPlayer ?? this.isWebPlayer,
+    error: error,
+    mode: mode ?? this.mode,
+    loopStartMs: loopStartMs ?? this.loopStartMs,
+    loopEndMs: loopEndMs ?? this.loopEndMs,
+  );
+
+  static const PlaybackState initial = PlaybackState();
+}

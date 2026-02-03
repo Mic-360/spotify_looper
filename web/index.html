@@ -1,0 +1,230 @@
+<!doctype html>
+<html>
+  <head>
+    <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+    <base href="$FLUTTER_BASE_HREF" />
+
+    <meta charset="UTF-8" />
+    <meta content="IE=Edge" http-equiv="X-UA-Compatible" />
+    <meta name="description" content="Spotify Looper - Your music, your way" />
+
+    <!-- iOS meta tags & icons -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="Spotify Looper" />
+    <link rel="apple-touch-icon" href="icons/Icon-192.png" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="favicon.png" />
+
+    <title>Spotify Looper</title>
+    <link rel="manifest" href="manifest.json" />
+
+    <!-- Spotify Web Playback SDK -->
+    <script src="https://sdk.scdn.co/spotify-player.js"></script>
+
+    <script>
+      // Spotify Looper Web Player Integration
+      window.spotifyLooper = {
+        player: null,
+        deviceId: null,
+        accessToken: null,
+        isReady: false,
+        onReadyCallback: null,
+        onStateChangedCallback: null,
+        onErrorCallback: null,
+
+        // Initialize player with token
+        createPlayer: function (name, token, onReady, onStateChanged, onError) {
+          console.log("[SpotifyLooper] Creating player...");
+          this.accessToken = token;
+          this.onReadyCallback = onReady;
+          this.onStateChangedCallback = onStateChanged;
+          this.onErrorCallback = onError;
+
+          // If SDK already loaded, initialize immediately
+          if (window.Spotify) {
+            console.log("[SpotifyLooper] SDK already loaded, initializing...");
+            this._initPlayer(name, token);
+          } else {
+            console.log("[SpotifyLooper] Waiting for SDK to load...");
+          }
+        },
+
+        _initPlayer: function (name, token) {
+          const self = this;
+
+          const player = new Spotify.Player({
+            name: name,
+            getOAuthToken: (cb) => {
+              console.log("[SpotifyLooper] Token requested");
+              cb(self.accessToken);
+            },
+            volume: 0.5,
+          });
+
+          // Error handling
+          player.addListener("initialization_error", ({ message }) => {
+            console.error("[SpotifyLooper] Initialization error:", message);
+            if (self.onErrorCallback)
+              self.onErrorCallback("Initialization error: " + message);
+          });
+          player.addListener("authentication_error", ({ message }) => {
+            console.error("[SpotifyLooper] Authentication error:", message);
+            if (self.onErrorCallback)
+              self.onErrorCallback("Authentication error: " + message);
+          });
+          player.addListener("account_error", ({ message }) => {
+            console.error("[SpotifyLooper] Account error:", message);
+            if (self.onErrorCallback)
+              self.onErrorCallback("Account error: " + message);
+          });
+          player.addListener("playback_error", ({ message }) => {
+            console.error("[SpotifyLooper] Playback error:", message);
+            if (self.onErrorCallback)
+              self.onErrorCallback("Playback error: " + message);
+          });
+
+          // Ready
+          player.addListener("ready", ({ device_id }) => {
+            console.log("[SpotifyLooper] Ready with device ID:", device_id);
+            self.deviceId = device_id;
+            self.isReady = true;
+            if (self.onReadyCallback) self.onReadyCallback(device_id);
+          });
+
+          // Not Ready
+          player.addListener("not_ready", ({ device_id }) => {
+            console.warn("[SpotifyLooper] Device went offline:", device_id);
+            self.isReady = false;
+            if (self.onErrorCallback)
+              self.onErrorCallback("Device went offline: " + device_id);
+          });
+
+          // State changed
+          player.addListener("player_state_changed", (state) => {
+            console.log("[SpotifyLooper] State changed:", state);
+            if (self.onStateChangedCallback) self.onStateChangedCallback(state);
+          });
+
+          // Connect
+          player.connect().then((success) => {
+            if (success) {
+              console.log("[SpotifyLooper] Connected successfully");
+            } else {
+              console.error("[SpotifyLooper] Failed to connect");
+              if (self.onErrorCallback)
+                self.onErrorCallback("Failed to connect to Spotify");
+            }
+          });
+
+          self.player = player;
+        },
+
+        // Play a track using Spotify Web API
+        play: function (deviceId, uri) {
+          console.log("[SpotifyLooper] Playing:", uri, "on device:", deviceId);
+
+          if (!this.accessToken) {
+            console.error("[SpotifyLooper] No access token!");
+            return;
+          }
+
+          fetch(
+            "https://api.spotify.com/v1/me/player/play?device_id=" + deviceId,
+            {
+              method: "PUT",
+              body: JSON.stringify({ uris: [uri] }),
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + this.accessToken,
+              },
+            },
+          )
+            .then((response) => {
+              if (!response.ok) {
+                console.error(
+                  "[SpotifyLooper] Play failed:",
+                  response.status,
+                  response.statusText,
+                );
+                return response.text().then((text) => {
+                  console.error("[SpotifyLooper] Error body:", text);
+                });
+              } else {
+                console.log("[SpotifyLooper] Play started successfully");
+              }
+            })
+            .catch((error) => {
+              console.error("[SpotifyLooper] Play error:", error);
+            });
+        },
+
+        // Update access token
+        setAccessToken: function (token) {
+          console.log("[SpotifyLooper] Access token updated");
+          this.accessToken = token;
+        },
+
+        resume: function () {
+          if (this.player) {
+            this.player.resume();
+          }
+        },
+
+        pause: function () {
+          if (this.player) {
+            this.player.pause();
+          }
+        },
+
+        togglePlayPause: function () {
+          if (this.player) {
+            this.player.togglePlay();
+          }
+        },
+
+        seek: function (positionMs) {
+          if (this.player) {
+            this.player.seek(positionMs);
+          }
+        },
+
+        disconnect: function () {
+          if (this.player) {
+            this.player.disconnect();
+            this.player = null;
+            this.isReady = false;
+          }
+        },
+      };
+
+      // SDK Ready callback - called by Spotify SDK when loaded
+      window.onSpotifyWebPlaybackSDKReady = () => {
+        console.log("[SpotifyLooper] Spotify Web Playback SDK Ready");
+        // If createPlayer was already called, initialize now
+        if (window.spotifyLooper.accessToken && !window.spotifyLooper.player) {
+          window.spotifyLooper._initPlayer(
+            "Spotify Looper",
+            window.spotifyLooper.accessToken,
+          );
+        }
+      };
+    </script>
+  </head>
+  <body>
+    <script src="flutter_bootstrap.js" async></script>
+  </body>
+</html>
