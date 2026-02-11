@@ -138,7 +138,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 24),
                 _buildUserCard(context),
               ],
-              const SizedBox(height: 100),
+              const SizedBox(height: 16),
             ]),
           ),
         ),
@@ -223,17 +223,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildCollapsingAppBar(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return SliverAppBar.large(
+    return SliverAppBar(
       floating: false,
       pinned: true,
-      expandedHeight: 120,
+      expandedHeight: 100,
       backgroundColor: colorScheme.surface,
       surfaceTintColor: Colors.transparent,
-      title: Text(
-        'Pulse Loop',
-        style: TextStyle(
-          fontWeight: FontWeight.w800,
-          color: colorScheme.onSurface,
+      flexibleSpace: FlexibleSpaceBar(
+        titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+        expandedTitleScale: 2.4,
+        title: Text(
+          'Pulse Loop',
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 18,
+            color: colorScheme.onSurface,
+            letterSpacing: -0.5,
+          ),
         ),
       ),
     );
@@ -455,16 +461,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             if (context.isCompact) ...[
               const SizedBox(height: 16),
               SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
+                // width: double.infinity,
+                child: FilledButton.tonal(
                   onPressed: _handleLogout,
-                  icon: const Icon(Icons.logout_rounded, size: 18),
-                  label: const Text('Logout'),
-                  style: OutlinedButton.styleFrom(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colorScheme.errorContainer,
+                    foregroundColor: colorScheme.onErrorContainer,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: const EdgeInsets.all(24),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.logout_rounded, size: 18, color: colorScheme.onErrorContainer),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Sign Out',
+                        style: textTheme.labelLarge?.copyWith(
+                          color: colorScheme.onErrorContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
