@@ -444,19 +444,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   const _SpotifyIcon(),
                   const SizedBox(width: 12),
-                  const Text(
-                    'Continue with Spotify',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.2,
+                  Flexible(
+                    child: Text(
+                      'Continue with Spotify',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.arrow_forward_rounded, size: 20),
                 ],
               ),
       ),
