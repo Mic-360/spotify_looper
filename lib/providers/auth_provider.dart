@@ -12,6 +12,9 @@ import '../services/spotify_api_service.dart';
 class AuthNotifier extends StateNotifier<AuthState> {
   AuthNotifier() : super(AuthState.initial);
 
+  /// Track codes already being processed to prevent double-redemption
+  final Set<String> _processedCodes = {};
+
   /// Initialize auth state from stored tokens
   Future<void> initialize() async {
     state = state.copyWithLoading();
@@ -68,6 +71,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Handle OAuth callback (Web)
   Future<void> handleCallback(String code) async {
+    // Guard: prevent the same code from being exchanged twice
+    if (_processedCodes.contains(code)) return;
+    // Also skip if we're already authenticated (callback screen already handled it)
+    if (state.isAuthenticated) return;
+    _processedCodes.add(code);
+
     state = state.copyWithLoading();
 
     final result = await SpotifyAuthService.exchangeCodeFromCallback(code);

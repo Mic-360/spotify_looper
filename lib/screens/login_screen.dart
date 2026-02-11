@@ -67,6 +67,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   void _handleWebCallback() {
+    // Skip if already authenticated (callback screen may have handled it)
+    final authState = ref.read(authProvider);
+    if (authState.isAuthenticated) return;
+
     final baseUri = Uri.base;
     String? code;
 
