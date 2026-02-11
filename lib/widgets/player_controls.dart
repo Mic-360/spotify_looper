@@ -328,13 +328,13 @@ class _ExpandedPlayerCard extends ConsumerWidget {
 
                   // Progress bar
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 16, 0, 0),
+                    padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
                     child: _buildProgressBar(ref, playerState, colorScheme, context),
                   ),
 
                   // Main controls
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -360,12 +360,13 @@ class _ExpandedPlayerCard extends ConsumerWidget {
                   ),
 
                   // Mode selector
+                  const SizedBox(height: 8),
                   const ModeSelector(),
 
                   // Range slider if looping/skipping
                   if (playerState.mode != PlayerMode.normal)
                     Padding(
-                      padding: const EdgeInsets.only(top: 8),
+                      padding: const EdgeInsets.only(top: 16),
                       child: _buildRangeSlider(
                         ref,
                         playerState,
@@ -549,6 +550,11 @@ class _PlayPauseButtonState extends State<_PlayPauseButton>
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    // Squircle when playing, circle when paused
+    final borderRadius = widget.isPlaying
+        ? BorderRadius.circular(20) // squircle
+        : BorderRadius.circular(32); // circle
+
     return GestureDetector(
       onTapDown: (_) => _controller.forward(),
       onTapUp: (_) {
@@ -561,17 +567,19 @@ class _PlayPauseButtonState extends State<_PlayPauseButton>
         builder: (context, child) {
           return Transform.scale(scale: _scaleAnimation.value, child: child);
         },
-        child: Container(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
           width: 64,
           height: 64,
           decoration: BoxDecoration(
             color: colorScheme.primary,
-            shape: BoxShape.circle,
+            borderRadius: borderRadius,
             boxShadow: [
               BoxShadow(
-                color: colorScheme.primary.withValues(alpha: 0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+                color: colorScheme.primary.withValues(alpha: 0.35),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
               ),
             ],
           ),

@@ -11,10 +11,10 @@ class ModeSelector extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(100),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -23,7 +23,7 @@ class ModeSelector extends ConsumerWidget {
             context,
             ref,
             PlayerMode.normal,
-            Icons.play_circle_outline,
+            Icons.play_arrow_rounded,
             'Normal',
             playerState.mode == PlayerMode.normal,
           ),
@@ -31,7 +31,7 @@ class ModeSelector extends ConsumerWidget {
             context,
             ref,
             PlayerMode.loop,
-            Icons.loop,
+            Icons.loop_rounded,
             'Loop',
             playerState.mode == PlayerMode.loop,
           ),
@@ -39,7 +39,7 @@ class ModeSelector extends ConsumerWidget {
             context,
             ref,
             PlayerMode.skip,
-            Icons.skip_next_outlined,
+            Icons.skip_next_rounded,
             'Skip',
             playerState.mode == PlayerMode.skip,
           ),
@@ -58,51 +58,46 @@ class ModeSelector extends ConsumerWidget {
   ) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => ref.read(playerProvider.notifier).setMode(mode),
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: isSelected ? colorScheme.primary : Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: colorScheme.primary.withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
-                  : null,
+    return GestureDetector(
+      onTap: () => ref.read(playerProvider.notifier).setMode(mode),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? colorScheme.primaryContainer
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(100),
+          border: isSelected
+              ? Border.all(
+                  color: colorScheme.primary.withValues(alpha: 0.3),
+                  width: 1.5,
+                )
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isSelected
+                  ? colorScheme.onPrimaryContainer
+                  : colorScheme.onSurfaceVariant,
             ),
-            child: Row(
-              children: [
-                Icon(
-                  icon,
-                  size: 18,
-                  color: isSelected
-                      ? colorScheme.onPrimary
-                      : colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isSelected
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected
+                    ? colorScheme.onPrimaryContainer
+                    : colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
