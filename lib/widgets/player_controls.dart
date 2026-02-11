@@ -20,11 +20,15 @@ class _PlayerControlsState extends ConsumerState<PlayerControls>
     with SingleTickerProviderStateMixin {
 
   void _showExpandedPlayer(BuildContext context) {
+    final screenHeight = MediaQuery.sizeOf(context).height;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
+      constraints: BoxConstraints(
+        maxHeight: screenHeight * 0.95,
+      ),
       builder: (context) => const _ExpandedPlayerCard(),
     );
   }
@@ -214,10 +218,19 @@ class _ExpandedPlayerCard extends ConsumerWidget {
     final track = playerState.currentTrack!;
 
     return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
       ),
+      clipBehavior: Clip.antiAlias,
       child: DraggableScrollableSheet(
         initialChildSize: 1.0,
         minChildSize: 0.5,
@@ -230,32 +243,19 @@ class _ExpandedPlayerCard extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 children: [
-                  // Handle bar + close
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 12, 0, 0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                          iconSize: 28,
+                  // Drag handle
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 12, bottom: 4),
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: colorScheme.onSurfaceVariant
+                              .withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(2),
                         ),
-                        Container(
-                          width: 40,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () {},
-                          icon: const Icon(Icons.more_vert_rounded),
-                          iconSize: 24,
-                        ),
-                      ],
+                      ),
                     ),
                   ),
 
