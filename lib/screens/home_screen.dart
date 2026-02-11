@@ -77,32 +77,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: Stack(
+        child: Column(
           children: [
-            Column(
-              children: [
-                Expanded(
-                  child: ResponsiveLayout(
-                    compact: (context) => _buildCompactLayout(context),
-                    medium: (context) => _buildMediumLayout(context),
-                    expanded: (context) => _buildExpandedLayout(context),
-                  ),
-                ),
-                // Player controls — pill for compact, desktop widget for others
-                if (context.isCompact)
-                  const PlayerControls()
-                else
-                  const DesktopPlayerControls(),
-              ],
-            ),
-            // Expanded player overlay (only shows when pill is tapped in compact)
-            if (context.isCompact)
-              Consumer(
-                builder: (context, ref, _) {
-                  // The PlayerControls widget manages its own expanded state
-                  return const SizedBox.shrink();
-                },
+            Expanded(
+              child: ResponsiveLayout(
+                compact: (context) => _buildCompactLayout(context),
+                medium: (context) => _buildMediumLayout(context),
+                expanded: (context) => _buildExpandedLayout(context),
               ),
+            ),
+            // Player controls — pill for compact, desktop widget for others
+            if (context.isCompact)
+              const PlayerControls()
+            else
+              const DesktopPlayerControls(),
           ],
         ),
       ),
@@ -124,9 +112,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-              const SizedBox(height: 8),
-              _buildSearchBar(context),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
               if (isSearching) ...[
                 _buildSearchResults(context),
               ] else ...[
@@ -162,8 +148,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 padding: const EdgeInsets.all(24),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    _buildSearchBar(context),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
                     _buildSearchResults(context),
                     _buildViewToggle(context),
                     const SizedBox(height: 16),
@@ -198,8 +183,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 padding: const EdgeInsets.all(32),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    _buildSearchBar(context),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
                     _buildSearchResults(context),
                     _buildViewToggle(context),
                     const SizedBox(height: 16),
@@ -226,11 +210,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return SliverAppBar(
       floating: false,
       pinned: true,
-      expandedHeight: 100,
+      expandedHeight: 160,
       backgroundColor: colorScheme.surface,
       surfaceTintColor: Colors.transparent,
       flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+        titlePadding: const EdgeInsets.only(left: 20, bottom: 72),
         expandedTitleScale: 2.4,
         title: Text(
           'Pulse Loop',
@@ -240,6 +224,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             color: colorScheme.onSurface,
             letterSpacing: -0.5,
           ),
+        ),
+      ),
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(64),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: _buildSearchBar(context),
         ),
       ),
     );

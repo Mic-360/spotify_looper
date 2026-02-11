@@ -18,10 +18,15 @@ class PlayerControls extends ConsumerStatefulWidget {
 
 class _PlayerControlsState extends ConsumerState<PlayerControls>
     with SingleTickerProviderStateMixin {
-  bool _isExpanded = false;
 
-  void _toggleExpanded() {
-    setState(() => _isExpanded = !_isExpanded);
+  void _showExpandedPlayer(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const _ExpandedPlayerCard(),
+    );
   }
 
   @override
@@ -32,14 +37,8 @@ class _PlayerControlsState extends ConsumerState<PlayerControls>
       return const SizedBox.shrink();
     }
 
-    if (_isExpanded) {
-      return _ExpandedPlayerCard(
-        onCollapse: _toggleExpanded,
-      );
-    }
-
     return _PillPlayer(
-      onTap: _toggleExpanded,
+      onTap: () => _showExpandedPlayer(context),
     );
   }
 }
@@ -81,36 +80,33 @@ class _PillPlayer extends ConsumerWidget {
         child: Row(
           children: [
             // Album art
-            Hero(
-              tag: 'player-album-art',
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(22),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: track.artworkUrl != null
-                    ? CachedNetworkImage(
-                        imageUrl: track.artworkUrl!,
-                        fit: BoxFit.cover,
-                      )
-                    : Container(
-                        color: colorScheme.primaryContainer,
-                        child: Icon(
-                          Icons.music_note_rounded,
-                          color: colorScheme.onPrimaryContainer,
-                          size: 20,
-                        ),
-                      ),
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
               ),
+              clipBehavior: Clip.antiAlias,
+              child: track.artworkUrl != null
+                  ? CachedNetworkImage(
+                      imageUrl: track.artworkUrl!,
+                      fit: BoxFit.cover,
+                    )
+                  : Container(
+                      color: colorScheme.primaryContainer,
+                      child: Icon(
+                        Icons.music_note_rounded,
+                        color: colorScheme.onPrimaryContainer,
+                        size: 20,
+                      ),
+                    ),
             ),
             const SizedBox(width: 12),
 
@@ -205,11 +201,10 @@ class _MiniPlayPauseButton extends StatelessWidget {
   }
 }
 
-/// Expanded player card shown as overlay
+/// Expanded player card shown as modal bottom sheet
 class _ExpandedPlayerCard extends ConsumerWidget {
-  final VoidCallback onCollapse;
 
-  const _ExpandedPlayerCard({required this.onCollapse});
+  const _ExpandedPlayerCard();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -217,50 +212,32 @@ class _ExpandedPlayerCard extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final track = playerState.currentTrack!;
-    final screenSize = MediaQuery.sizeOf(context);
 
-    return Material(
-      color: Colors.transparent,
-      child: Stack(
-        children: [
-          // Scrim background
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: onCollapse,
-              child: Container(
-                color: Colors.black.withValues(alpha: 0.5),
-              ),
-            ),
-          ),
-
-          // Card
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 16,
-            top: screenSize.height * 0.12,
-            child: Container(
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(32),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.25),
-                    blurRadius: 24,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      child: DraggableScrollableSheet(
+        initialChildSize: 1.0,
+        minChildSize: 0.5,
+        maxChildSize: 1.0,
+        expand: false,
+        builder: (context, scrollController) {
+          return SingleChildScrollView(
+            controller: scrollController,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 children: [
                   // Handle bar + close
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 12, 8, 0),
+                    padding: const EdgeInsets.fromLTRB(0, 12, 0, 0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         IconButton(
-                          onPressed: onCollapse,
+                          onPressed: () => Navigator.of(context).pop(),
                           icon: const Icon(Icons.keyboard_arrow_down_rounded),
                           iconSize: 28,
                         ),
@@ -283,99 +260,81 @@ class _ExpandedPlayerCard extends ConsumerWidget {
                   ),
 
                   // Album art
-                  Expanded(
-                    flex: 5,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
-                      child: Hero(
-                        tag: 'player-album-art',
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.3),
-                                blurRadius: 20,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: track.artworkUrl != null
-                              ? CachedNetworkImage(
-                                  imageUrl: track.artworkUrl!,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                )
-                              : Container(
-                                  color: colorScheme.primaryContainer,
-                                  child: Center(
-                                    child: Icon(
-                                      Icons.music_note_rounded,
-                                      size: 64,
-                                      color: colorScheme.onPrimaryContainer,
-                                    ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: track.artworkUrl != null
+                            ? CachedNetworkImage(
+                                imageUrl: track.artworkUrl!,
+                                fit: BoxFit.cover,
+                              )
+                            : Container(
+                                color: colorScheme.primaryContainer,
+                                child: Center(
+                                  child: Icon(
+                                    Icons.music_note_rounded,
+                                    size: 64,
+                                    color: colorScheme.onPrimaryContainer,
                                   ),
                                 ),
-                        ),
+                              ),
                       ),
                     ),
                   ),
 
                   // Track info
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Column(
-                      children: [
-                        Text(
-                          track.name,
-                          style: textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          track.artistNames,
-                          style: textTheme.bodyLarge?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                        ),
-                        Text(
-                          track.album.name,
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.7),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                  Text(
+                    track.name,
+                    style: textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    track.artistNames,
+                    style: textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                  Text(
+                    track.album.name,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant
+                          .withValues(alpha: 0.7),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                   ),
 
                   // Progress bar
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                    padding: const EdgeInsets.fromLTRB(0, 16, 0, 0),
                     child: _buildProgressBar(ref, playerState, colorScheme, context),
                   ),
 
                   // Main controls
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 8,
-                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -401,15 +360,12 @@ class _ExpandedPlayerCard extends ConsumerWidget {
                   ),
 
                   // Mode selector
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24),
-                    child: ModeSelector(),
-                  ),
+                  const ModeSelector(),
 
                   // Range slider if looping/skipping
                   if (playerState.mode != PlayerMode.normal)
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      padding: const EdgeInsets.only(top: 8),
                       child: _buildRangeSlider(
                         ref,
                         playerState,
@@ -418,12 +374,12 @@ class _ExpandedPlayerCard extends ConsumerWidget {
                       ),
                     ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 32),
                 ],
               ),
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
