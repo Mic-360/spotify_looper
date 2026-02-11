@@ -1,9 +1,10 @@
-/// Home screen with user data display and search.
+/// Home screen with M3E design — collapsing title, staggered grid, pill player.
 library;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/responsive.dart';
@@ -14,6 +15,9 @@ import '../providers/search_provider.dart';
 import '../providers/user_provider.dart';
 import '../widgets/player_controls.dart';
 import '../widgets/track_card.dart';
+import '../widgets/track_grid_card.dart';
+
+enum ViewMode { grid, list }
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -25,11 +29,11 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
+  ViewMode _viewMode = ViewMode.grid;
 
   @override
   void initState() {
     super.initState();
-    // Initialize web player
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(playerProvider.notifier).initializePlayer();
     });
@@ -59,7 +63,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Listen for playback errors
     ref.listen<PlaybackState>(playerProvider, (previous, next) {
       if (next.error != null && next.error != previous?.error) {
         _showErrorIfNeeded(next.error);
@@ -74,40 +77,68 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            Expanded(
-              child: ResponsiveLayout(
-                compact: (context) => _buildCompactLayout(context),
-                medium: (context) => _buildMediumLayout(context),
-                expanded: (context) => _buildExpandedLayout(context),
-              ),
+            Column(
+              children: [
+                Expanded(
+                  child: ResponsiveLayout(
+                    compact: (context) => _buildCompactLayout(context),
+                    medium: (context) => _buildMediumLayout(context),
+                    expanded: (context) => _buildExpandedLayout(context),
+                  ),
+                ),
+                // Player controls — pill for compact, desktop widget for others
+                if (context.isCompact)
+                  const PlayerControls()
+                else
+                  const DesktopPlayerControls(),
+              ],
             ),
-            // Player controls at bottom
-            const PlayerControls(),
+            // Expanded player overlay (only shows when pill is tapped in compact)
+            if (context.isCompact)
+              Consumer(
+                builder: (context, ref, _) {
+                  // The PlayerControls widget manages its own expanded state
+                  return const SizedBox.shrink();
+                },
+              ),
           ],
         ),
       ),
     );
   }
 
+  // ===========================================================================
+  // COMPACT LAYOUT (Mobile)
+  // ===========================================================================
+
   Widget _buildCompactLayout(BuildContext context) {
+    final searchState = ref.watch(searchNotifierProvider);
+    final isSearching = searchState.query.isNotEmpty;
+
     return CustomScrollView(
       slivers: [
-        _buildAppBar(context),
+        _buildCollapsingAppBar(context),
         SliverPadding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-              _buildUserCard(context),
-              const SizedBox(height: 24),
+              const SizedBox(height: 8),
               _buildSearchBar(context),
-              const SizedBox(height: 24),
-              _buildSearchResults(context),
-              _buildTopTracks(context),
-              const SizedBox(height: 24),
-              _buildRecentlyPlayed(context),
-              const SizedBox(height: 100), // Space for player
+              const SizedBox(height: 20),
+              if (isSearching) ...[
+                _buildSearchResults(context),
+              ] else ...[
+                _buildViewToggle(context),
+                const SizedBox(height: 16),
+                _buildTopTracks(context),
+                const SizedBox(height: 24),
+                _buildRecentlyPlayed(context),
+                const SizedBox(height: 24),
+                _buildUserCard(context),
+              ],
+              const SizedBox(height: 100),
             ]),
           ),
         ),
@@ -115,22 +146,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  // ===========================================================================
+  // MEDIUM LAYOUT (Tablet)
+  // ===========================================================================
+
   Widget _buildMediumLayout(BuildContext context) {
     return Row(
       children: [
-        // Side panel with user info
         SizedBox(width: 300, child: _buildSidePanel(context)),
-        // Main content
         Expanded(
           child: CustomScrollView(
             slivers: [
+              _buildCollapsingAppBar(context),
               SliverPadding(
                 padding: const EdgeInsets.all(24),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     _buildSearchBar(context),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     _buildSearchResults(context),
+                    _buildViewToggle(context),
+                    const SizedBox(height: 16),
                     _buildTopTracks(context),
                     const SizedBox(height: 24),
                     _buildRecentlyPlayed(context),
@@ -145,23 +181,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  // ===========================================================================
+  // EXPANDED LAYOUT (Desktop)
+  // ===========================================================================
+
   Widget _buildExpandedLayout(BuildContext context) {
     return Row(
       children: [
-        // Left panel - user info and stats
         SizedBox(width: 320, child: _buildSidePanel(context)),
-        // Center - search and results
         Expanded(
           flex: 2,
           child: CustomScrollView(
             slivers: [
+              _buildCollapsingAppBar(context),
               SliverPadding(
                 padding: const EdgeInsets.all(32),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     _buildSearchBar(context),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     _buildSearchResults(context),
+                    _buildViewToggle(context),
+                    const SizedBox(height: 16),
                     _buildTopTracks(context),
                     const SizedBox(height: 100),
                   ]),
@@ -170,43 +211,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ],
           ),
         ),
-        // Right panel - recently played
         SizedBox(width: 320, child: _buildRecentlyPlayedPanel(context)),
       ],
     );
   }
 
-  Widget _buildAppBar(BuildContext context) {
-    final user = ref.watch(currentUserProvider);
+  // ===========================================================================
+  // COLLAPSING APP BAR — Big "Pulse Loop" that shrinks on scroll
+  // ===========================================================================
+
+  Widget _buildCollapsingAppBar(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return SliverAppBar(
-      floating: true,
-      title: const Text('Spotify Looper'),
-      actions: [
-        if (user != null)
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: GestureDetector(
-              onTap: () => _showUserMenu(context),
-              child: CircleAvatar(
-                radius: 18,
-                backgroundImage: user.imageUrl != null
-                    ? CachedNetworkImageProvider(user.imageUrl!)
-                    : null,
-                backgroundColor: colorScheme.primaryContainer,
-                child: user.imageUrl == null
-                    ? Text(
-                        user.displayName[0].toUpperCase(),
-                        style: TextStyle(color: colorScheme.onPrimaryContainer),
-                      )
-                    : null,
-              ),
-            ),
-          ),
-      ],
+    return SliverAppBar.large(
+      floating: false,
+      pinned: true,
+      expandedHeight: 120,
+      backgroundColor: colorScheme.surface,
+      surfaceTintColor: Colors.transparent,
+      title: Text(
+        'Pulse Loop',
+        style: TextStyle(
+          fontWeight: FontWeight.w800,
+          color: colorScheme.onSurface,
+        ),
+      ),
     );
   }
+
+  // ===========================================================================
+  // SIDE PANEL (Medium / Expanded)
+  // ===========================================================================
 
   Widget _buildSidePanel(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -222,20 +257,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       child: Column(
         children: [
-          // User card
           Padding(
             padding: const EdgeInsets.all(20),
             child: _buildUserCard(context),
           ),
           const Divider(),
-          // Stats
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: _buildUserStats(context),
             ),
           ),
-          // Logout button
           Padding(
             padding: const EdgeInsets.all(20),
             child: SizedBox(
@@ -252,95 +284,231 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  // ===========================================================================
+  // USER CARD — rich details from Spotify
+  // ===========================================================================
+
   Widget _buildUserCard(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final stats = ref.watch(userStatsProvider);
+    final playlists = ref.watch(playlistsProvider);
+    final followedArtists = ref.watch(followedArtistsProvider);
 
     if (user == null) return const SizedBox.shrink();
 
     return Card(
       elevation: 0,
       color: colorScheme.surfaceContainerHigh,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
+        padding: const EdgeInsets.all(20),
+        child: Column(
           children: [
-            // Avatar
-            CircleAvatar(
-              radius: 32,
-              backgroundImage: user.imageUrl != null
-                  ? CachedNetworkImageProvider(user.imageUrl!)
-                  : null,
-              backgroundColor: colorScheme.primaryContainer,
-              child: user.imageUrl == null
-                  ? Text(
-                      user.displayName[0].toUpperCase(),
-                      style: textTheme.headlineSmall?.copyWith(
-                        color: colorScheme.onPrimaryContainer,
-                      ),
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 16),
-            // Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    user.displayName,
-                    style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+            // Avatar + Name + Badge row
+            Row(
+              children: [
+                // Avatar
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: colorScheme.primary.withValues(alpha: 0.3),
+                      width: 3,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
-                  Row(
+                  child: CircleAvatar(
+                    radius: 32,
+                    backgroundImage: user.imageUrl != null
+                        ? CachedNetworkImageProvider(user.imageUrl!)
+                        : null,
+                    backgroundColor: colorScheme.primaryContainer,
+                    child: user.imageUrl == null
+                        ? Text(
+                            user.displayName[0].toUpperCase(),
+                            style: textTheme.headlineSmall?.copyWith(
+                              color: colorScheme.onPrimaryContainer,
+                            ),
+                          )
+                        : null,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: user.isPremium
-                              ? colorScheme.primaryContainer
-                              : colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          user.isPremium ? 'Premium' : 'Free',
-                          style: textTheme.labelSmall?.copyWith(
-                            color: user.isPremium
-                                ? colorScheme.onPrimaryContainer
-                                : colorScheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.location_on,
-                        size: 14,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 2),
                       Text(
-                        user.country,
+                        user.displayName,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        user.email,
                         style: textTheme.bodySmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          // Premium / Free badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: user.isPremium
+                                  ? colorScheme.primaryContainer
+                                  : colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (user.isPremium)
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 4),
+                                    child: Icon(
+                                      Icons.verified_rounded,
+                                      size: 12,
+                                      color: colorScheme.onPrimaryContainer,
+                                    ),
+                                  ),
+                                Text(
+                                  user.isPremium ? 'Premium' : 'Free',
+                                  style: textTheme.labelSmall?.copyWith(
+                                    color: user.isPremium
+                                        ? colorScheme.onPrimaryContainer
+                                        : colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Country
+                          Icon(
+                            Icons.location_on_rounded,
+                            size: 14,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            user.country,
+                            style: textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
+
+            const SizedBox(height: 16),
+            // Divider
+            Divider(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+              height: 1,
+            ),
+            const SizedBox(height: 16),
+
+            // Stats row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatColumn(
+                  context,
+                  '${user.followers}',
+                  'Followers',
+                  Icons.people_outline_rounded,
+                ),
+                _buildStatColumn(
+                  context,
+                  playlists.valueOrNull?.length.toString() ?? '...',
+                  'Playlists',
+                  Icons.playlist_play_rounded,
+                ),
+                _buildStatColumn(
+                  context,
+                  followedArtists.valueOrNull?.length.toString() ?? '...',
+                  'Following',
+                  Icons.person_add_alt_rounded,
+                ),
+              ],
+            ),
+
+            // Logout button for compact layout
+            if (context.isCompact) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _handleLogout,
+                  icon: const Icon(Icons.logout_rounded, size: 18),
+                  label: const Text('Logout'),
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildStatColumn(
+    BuildContext context,
+    String value,
+    String label,
+    IconData icon,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: colorScheme.primary, size: 20),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 
@@ -359,19 +527,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(height: 16),
         _buildStatTile(
           context,
-          icon: Icons.playlist_play,
+          icon: Icons.playlist_play_rounded,
           label: 'Playlists',
           value: playlists.valueOrNull?.length.toString() ?? '...',
         ),
         _buildStatTile(
           context,
-          icon: Icons.person,
+          icon: Icons.person_rounded,
           label: 'Following',
           value: followedArtists.valueOrNull?.length.toString() ?? '...',
         ),
         _buildStatTile(
           context,
-          icon: Icons.favorite,
+          icon: Icons.favorite_rounded,
           label: 'Liked Songs',
           value: '...',
         ),
@@ -413,28 +581,169 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  // ===========================================================================
+  // SEARCH BAR — M3 Expressive style
+  // ===========================================================================
+
   Widget _buildSearchBar(BuildContext context) {
-    return TextField(
-      controller: _searchController,
-      focusNode: _searchFocusNode,
-      onChanged: (value) {
-        ref.read(searchNotifierProvider.notifier).updateQuery(value);
-      },
-      decoration: InputDecoration(
-        hintText: 'Search for songs, artists, or albums...',
-        prefixIcon: const Icon(Icons.search),
-        suffixIcon: _searchController.text.isNotEmpty
-            ? IconButton(
-                icon: const Icon(Icons.clear),
-                onPressed: () {
-                  _searchController.clear();
-                  ref.read(searchNotifierProvider.notifier).clearSearch();
-                },
-              )
-            : null,
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
+      ),
+      child: TextField(
+        controller: _searchController,
+        focusNode: _searchFocusNode,
+        onChanged: (value) {
+          ref.read(searchNotifierProvider.notifier).updateQuery(value);
+          setState(() {}); // Rebuild for clear button
+        },
+        style: textTheme.bodyLarge,
+        decoration: InputDecoration(
+          hintText: 'Search songs, artists, albums...',
+          hintStyle: textTheme.bodyLarge?.copyWith(
+            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+          ),
+          prefixIcon: Padding(
+            padding: const EdgeInsets.only(left: 16, right: 8),
+            child: Icon(
+              Icons.search_rounded,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          prefixIconConstraints: const BoxConstraints(
+            minWidth: 48,
+            minHeight: 48,
+          ),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.close_rounded,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    onPressed: () {
+                      _searchController.clear();
+                      ref.read(searchNotifierProvider.notifier).clearSearch();
+                      setState(() {});
+                    },
+                  ),
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
+        ),
       ),
     );
   }
+
+  // ===========================================================================
+  // VIEW MODE TOGGLE — Grid / List
+  // ===========================================================================
+
+  Widget _buildViewToggle(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildToggleButton(
+              context,
+              icon: Icons.grid_view_rounded,
+              label: 'Grid',
+              isSelected: _viewMode == ViewMode.grid,
+              onTap: () => setState(() => _viewMode = ViewMode.grid),
+            ),
+          ),
+          Expanded(
+            child: _buildToggleButton(
+              context,
+              icon: Icons.view_list_rounded,
+              label: 'List',
+              isSelected: _viewMode == ViewMode.list,
+              onTap: () => setState(() => _viewMode = ViewMode.list),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggleButton(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? colorScheme.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: colorScheme.primary.withValues(alpha: 0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isSelected
+                  ? colorScheme.onPrimary
+                  : colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: textTheme.labelLarge?.copyWith(
+                color: isSelected
+                    ? colorScheme.onPrimary
+                    : colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ===========================================================================
+  // SEARCH RESULTS — Always list view
+  // ===========================================================================
 
   Widget _buildSearchResults(BuildContext context) {
     final searchState = ref.watch(searchNotifierProvider);
@@ -489,6 +798,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  // ===========================================================================
+  // TOP TRACKS — Grid or List with staggered grid view
+  // ===========================================================================
+
   Widget _buildTopTracks(BuildContext context) {
     final topTracks = ref.watch(topTracksProvider);
     final playerState = ref.watch(playerProvider);
@@ -505,26 +818,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         topTracks.when(
           data: (tracks) => tracks.isEmpty
               ? _buildEmptyState(context, 'No top tracks yet')
-              : Column(
-                  children: tracks
-                      .map(
-                        (track) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: TrackCard(
-                            track: track,
-                            isPlaying: playerState.currentTrack?.id == track.id,
-                            onTap: () => _playTrack(track),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
+              : _viewMode == ViewMode.grid
+                  ? _buildStaggeredGrid(tracks, playerState)
+                  : _buildTrackList(tracks, playerState),
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => _buildErrorState(context, error.toString()),
         ),
       ],
     );
   }
+
+  // ===========================================================================
+  // RECENTLY PLAYED — Grid or List, with deduplication
+  // ===========================================================================
 
   Widget _buildRecentlyPlayed(BuildContext context) {
     final recentlyPlayed = ref.watch(recentlyPlayedProvider);
@@ -540,29 +846,82 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         const SizedBox(height: 16),
         recentlyPlayed.when(
-          data: (tracks) => tracks.isEmpty
-              ? _buildEmptyState(context, 'No recently played tracks')
-              : Column(
-                  children: tracks
-                      .take(5)
-                      .map(
-                        (track) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: TrackCard(
-                            track: track,
-                            isPlaying: playerState.currentTrack?.id == track.id,
-                            onTap: () => _playTrack(track),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
+          data: (tracks) {
+            final deduplicated = _deduplicateTracks(tracks);
+            return deduplicated.isEmpty
+                ? _buildEmptyState(context, 'No recently played tracks')
+                : _viewMode == ViewMode.grid
+                    ? _buildStaggeredGrid(deduplicated, playerState)
+                    : _buildTrackList(deduplicated, playerState);
+          },
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => _buildErrorState(context, error.toString()),
         ),
       ],
     );
   }
+
+  /// Deduplicate tracks by ID, keeping the first occurrence.
+  List<SpotifyTrack> _deduplicateTracks(List<SpotifyTrack> tracks) {
+    final seen = <String>{};
+    return tracks.where((track) => seen.add(track.id)).toList();
+  }
+
+  // ===========================================================================
+  // STAGGERED GRID — using flutter_staggered_grid_view
+  // ===========================================================================
+
+  Widget _buildStaggeredGrid(
+    List<SpotifyTrack> tracks,
+    PlaybackState playerState,
+  ) {
+    return MasonryGridView.count(
+      crossAxisCount: 2,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: tracks.length,
+      itemBuilder: (context, index) {
+        final track = tracks[index];
+        // Alternate between taller and shorter for staggered effect
+        final isTall = index % 3 == 0;
+        return SizedBox(
+          height: isTall ? 240 : 200,
+          child: TrackGridCard(
+            track: track,
+            isPlaying: playerState.currentTrack?.id == track.id,
+            isTall: isTall,
+            onTap: () => _playTrack(track),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTrackList(
+    List<SpotifyTrack> tracks,
+    PlaybackState playerState,
+  ) {
+    return Column(
+      children: tracks
+          .map(
+            (track) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: TrackCard(
+                track: track,
+                isPlaying: playerState.currentTrack?.id == track.id,
+                onTap: () => _playTrack(track),
+              ),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  // ===========================================================================
+  // RECENTLY PLAYED PANEL (Desktop expanded layout)
+  // ===========================================================================
 
   Widget _buildRecentlyPlayedPanel(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -593,21 +952,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           Expanded(
             child: recentlyPlayed.when(
-              data: (tracks) => ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: tracks.length,
-                itemBuilder: (context, index) {
-                  final track = tracks[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: TrackCard(
-                      track: track,
-                      isPlaying: playerState.currentTrack?.id == track.id,
-                      onTap: () => _playTrack(track),
-                    ),
-                  );
-                },
-              ),
+              data: (tracks) {
+                final deduplicated = _deduplicateTracks(tracks);
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: deduplicated.length,
+                  itemBuilder: (context, index) {
+                    final track = deduplicated[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: TrackCard(
+                        track: track,
+                        isPlaying: playerState.currentTrack?.id == track.id,
+                        onTap: () => _playTrack(track),
+                      ),
+                    );
+                  },
+                );
+              },
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) => Center(child: Text('Error: $error')),
             ),
@@ -616,6 +978,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
+
+  // ===========================================================================
+  // HELPERS
+  // ===========================================================================
 
   Widget _buildEmptyState(BuildContext context, String message) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -642,62 +1008,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           style: TextStyle(color: colorScheme.error),
         ),
       ),
-    );
-  }
-
-  void _showUserMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        final user = ref.read(currentUserProvider);
-        final colorScheme = Theme.of(context).colorScheme;
-
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 16),
-              if (user != null) ...[
-                CircleAvatar(
-                  radius: 40,
-                  backgroundImage: user.imageUrl != null
-                      ? CachedNetworkImageProvider(user.imageUrl!)
-                      : null,
-                  backgroundColor: colorScheme.primaryContainer,
-                  child: user.imageUrl == null
-                      ? Text(
-                          user.displayName[0].toUpperCase(),
-                          style: Theme.of(context).textTheme.headlineMedium
-                              ?.copyWith(color: colorScheme.onPrimaryContainer),
-                        )
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  user.displayName,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                Text(
-                  user.email,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 24),
-              ],
-              ListTile(
-                leading: const Icon(Icons.logout),
-                title: const Text('Logout'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _handleLogout();
-                },
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        );
-      },
     );
   }
 
