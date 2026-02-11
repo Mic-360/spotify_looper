@@ -7,8 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 /// M3E Theme configuration
 class AppTheme {
-  // Fallback seed color when dynamic color is not available
-  static const Color fallbackSeedColor = Colors.deepPurple;
+  // Fallback seed color when dynamic color is not available (Spotify Green)
+  static const Color fallbackSeedColor = Color(0xFF1DB954);
 
   /// Create light theme with optional dynamic color scheme
   static ThemeData lightTheme([ColorScheme? dynamicScheme]) {

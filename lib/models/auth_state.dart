@@ -60,8 +60,24 @@ class AuthState {
   );
 
   /// Create error state
-  AuthState copyWithError(String message) =>
-      AuthState(status: AuthStatus.error, errorMessage: message);
+  AuthState copyWithError(String message) => AuthState(
+    status: AuthStatus.error,
+    accessToken: accessToken,
+    refreshToken: refreshToken,
+    expiresAt: expiresAt,
+    user: user,
+    errorMessage: message,
+  );
+
+  /// Clear error
+  AuthState clearError() => AuthState(
+    status: status == AuthStatus.error ? AuthStatus.unauthenticated : status,
+    accessToken: accessToken,
+    refreshToken: refreshToken,
+    expiresAt: expiresAt,
+    user: user,
+    errorMessage: null,
+  );
 
   /// Create unauthenticated state
   static const AuthState unauthenticated = AuthState(

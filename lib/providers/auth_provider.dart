@@ -66,6 +66,38 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Handle OAuth callback (Web)
+  Future<void> handleCallback(String code) async {
+    state = state.copyWithLoading();
+
+    final result = await SpotifyAuthService.exchangeCodeFromCallback(code);
+
+    if (result.isSuccess) {
+      try {
+        final api = SpotifyApiService(result.accessToken!);
+        final user = await api.getCurrentUser();
+
+        state = state.copyWithAuthenticated(
+          accessToken: result.accessToken!,
+          refreshToken: result.refreshToken,
+          expiresAt: result.expiresAt!,
+          user: user,
+        );
+      } catch (e) {
+        state = state.copyWithError('Failed to fetch user profile: $e');
+      }
+    } else {
+      state = state.copyWithError(
+        result.errorMessage ?? 'Authentication failed',
+      );
+    }
+  }
+
+  /// Clear auth error
+  void clearError() {
+    state = state.clearError();
+  }
+
   /// Logout
   Future<void> logout() async {
     await SpotifyAuthService.clearTokens();
