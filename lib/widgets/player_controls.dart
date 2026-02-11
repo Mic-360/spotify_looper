@@ -27,7 +27,7 @@ class _PlayerControlsState extends ConsumerState<PlayerControls>
       useSafeArea: true,
       backgroundColor: Colors.transparent,
       constraints: BoxConstraints(
-        maxHeight: screenHeight * 0.95,
+        maxHeight: screenHeight * 0.90,
       ),
       builder: (context) => const _ExpandedPlayerCard(),
     );
