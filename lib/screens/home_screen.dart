@@ -77,22 +77,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: ResponsiveLayout(
-                compact: (context) => _buildCompactLayout(context),
-                medium: (context) => _buildMediumLayout(context),
-                expanded: (context) => _buildExpandedLayout(context),
+        child: context.isCompact
+            ? Stack(
+                children: [
+                  // Content fills entire area
+                  Positioned.fill(
+                    child: ResponsiveLayout(
+                      compact: (context) => _buildCompactLayout(context),
+                      medium: (context) => _buildMediumLayout(context),
+                      expanded: (context) => _buildExpandedLayout(context),
+                    ),
+                  ),
+                  // Pill player floats at bottom
+                  const Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 8,
+                    child: PlayerControls(),
+                  ),
+                ],
+              )
+            : Column(
+                children: [
+                  Expanded(
+                    child: ResponsiveLayout(
+                      compact: (context) => _buildCompactLayout(context),
+                      medium: (context) => _buildMediumLayout(context),
+                      expanded: (context) => _buildExpandedLayout(context),
+                    ),
+                  ),
+                  const DesktopPlayerControls(),
+                ],
               ),
-            ),
-            // Player controls — pill for compact, desktop widget for others
-            if (context.isCompact)
-              const PlayerControls()
-            else
-              const DesktopPlayerControls(),
-          ],
-        ),
       ),
     );
   }
@@ -124,7 +140,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 24),
                 _buildUserCard(context),
               ],
-              const SizedBox(height: 16),
+              // Extra space so content isn't hidden behind floating pill player
+              const SizedBox(height: 80),
             ]),
           ),
         ),
