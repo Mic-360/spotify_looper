@@ -1,13 +1,31 @@
 {
-    "name": "spotify_looper",
-    "short_name": "spotify_looper",
-    "start_url": ".",
+    "name": "Spotify Looper — Precision Music Looping",
+    "short_name": "Spotify Looper",
+    "start_url": "/",
+    "id": "/",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "display_override": [
+        "window-controls-overlay",
+        "standalone",
+        "minimal-ui"
+    ],
+    "background_color": "#121212",
+    "theme_color": "#1DB954",
+    "description": "Set custom loop points on any Spotify track with millisecond accuracy. Perfect for music practice, transcription, and replaying your favorite sections.",
+    "orientation": "any",
     "prefer_related_applications": false,
+    "categories": [
+        "music",
+        "entertainment",
+        "productivity"
+    ],
+    "lang": "en-US",
+    "dir": "ltr",
+    "scope": "/",
+    "handle_links": "preferred",
+    "launch_handler": {
+        "client_mode": "navigate-existing"
+    },
     "icons": [
         {
             "src": "icons/Icon-192.png",
@@ -31,5 +49,40 @@
             "type": "image/png",
             "purpose": "maskable"
         }
-    ]
+    ],
+    "shortcuts": [
+        {
+            "name": "Open Player",
+            "short_name": "Player",
+            "description": "Jump straight to the looper player",
+            "url": "/home",
+            "icons": [
+                {
+                    "src": "icons/Icon-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "form_factor": "narrow",
+            "label": "Spotify Looper home screen"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "form_factor": "wide",
+            "label": "Spotify Looper desktop view"
+        }
+    ],
+    "related_applications": [],
+    "edge_side_panel": {
+        "preferred_width": 400
+    }
 }

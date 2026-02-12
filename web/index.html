@@ -1,7 +1,8 @@
 <!doctype html>
-<html>
-  <head>
-    <!--
+<html lang="en">
+
+<head>
+  <!--
     If you are serving your web app in a path other than the root, change the
     href value below to reflect the base path you are serving from.
 
@@ -14,217 +15,577 @@
     This is a placeholder for base href that will be replaced by the value of
     the `--base-href` argument provided to `flutter build`.
   -->
-    <base href="$FLUTTER_BASE_HREF" />
+  <base href="$FLUTTER_BASE_HREF" />
 
-    <meta charset="UTF-8" />
-    <meta content="IE=Edge" http-equiv="X-UA-Compatible" />
-    <meta name="description" content="Spotify Looper - Your music, your way" />
+  <meta charset="UTF-8" />
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- iOS meta tags & icons -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-    <meta name="apple-mobile-web-app-title" content="Spotify Looper" />
-    <link rel="apple-touch-icon" href="icons/Icon-192.png" />
+  <!-- Primary SEO Meta Tags -->
+  <title>Spotify Looper — Loop Any Section of a Song with Precision</title>
+  <meta name="description"
+    content="Spotify Looper lets you set custom loop points on any Spotify track with millisecond accuracy. Perfect for music practice, transcription, and replaying your favorite sections. Available on Web and Android." />
+  <meta name="keywords"
+    content="Spotify looper, loop song section, music practice tool, A-B repeat, Spotify loop player, song segment repeater, music transcription, precision looping" />
+  <meta name="author" content="Spotify Looper Team" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://spotify-looper-cc1ad.web.app/" />
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="favicon.png" />
+  <!-- Theme Color -->
+  <meta name="theme-color" content="#1DB954" />
+  <meta name="msapplication-navbutton-color" content="#1DB954" />
 
-    <title>Spotify Looper</title>
-    <link rel="manifest" href="manifest.json" />
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://spotify-looper-cc1ad.web.app/" />
+  <meta property="og:title" content="Spotify Looper — Loop Any Section of a Song" />
+  <meta property="og:description"
+    content="Set custom loop points on any Spotify track with millisecond precision. Perfect for practice, transcription, and replay." />
+  <meta property="og:image" content="https://spotify-looper-cc1ad.web.app/icons/Icon-512.png" />
+  <meta property="og:image:width" content="512" />
+  <meta property="og:image:height" content="512" />
+  <meta property="og:site_name" content="Spotify Looper" />
+  <meta property="og:locale" content="en_US" />
 
-    <!-- Spotify Web Playback SDK -->
-    <script src="https://sdk.scdn.co/spotify-player.js"></script>
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:url" content="https://spotify-looper-cc1ad.web.app/" />
+  <meta name="twitter:title" content="Spotify Looper — Loop Any Section of a Song" />
+  <meta name="twitter:description"
+    content="Set custom loop points on any Spotify track with millisecond precision. Perfect for practice, transcription, and replay." />
+  <meta name="twitter:image" content="https://spotify-looper-cc1ad.web.app/icons/Icon-512.png" />
 
-    <script>
-      // Spotify Looper Web Player Integration
-      window.spotifyLooper = {
-        player: null,
-        deviceId: null,
-        accessToken: null,
-        isReady: false,
-        onReadyCallback: null,
-        onStateChangedCallback: null,
-        onErrorCallback: null,
+  <!-- iOS meta tags & icons -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Spotify Looper" />
+  <link rel="apple-touch-icon" href="icons/Icon-192.png" />
 
-        // Initialize player with token
-        createPlayer: function (name, token, onReady, onStateChanged, onError) {
-          console.log("[SpotifyLooper] Creating player...");
-          this.accessToken = token;
-          this.onReadyCallback = onReady;
-          this.onStateChangedCallback = onStateChanged;
-          this.onErrorCallback = onError;
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/Icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icons/Icon-512.png" />
 
-          // If SDK already loaded, initialize immediately
-          if (window.Spotify) {
-            console.log("[SpotifyLooper] SDK already loaded, initializing...");
-            this._initPlayer(name, token);
-          } else {
-            console.log("[SpotifyLooper] Waiting for SDK to load...");
-          }
+  <!-- Manifest -->
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- JSON-LD Structured Data -->
+  <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Spotify Looper",
+        "url": "https://spotify-looper-cc1ad.web.app/",
+        "description": "A precision music looping tool for Spotify. Set custom A-B loop points on any track with millisecond accuracy.",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Web, Android",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
         },
-
-        _initPlayer: function (name, token) {
-          const self = this;
-
-          const player = new Spotify.Player({
-            name: name,
-            getOAuthToken: (cb) => {
-              console.log("[SpotifyLooper] Token requested");
-              cb(self.accessToken);
-            },
-            volume: 0.5,
-          });
-
-          // Error handling
-          player.addListener("initialization_error", ({ message }) => {
-            console.error("[SpotifyLooper] Initialization error:", message);
-            if (self.onErrorCallback)
-              self.onErrorCallback("Initialization error: " + message);
-          });
-          player.addListener("authentication_error", ({ message }) => {
-            console.error("[SpotifyLooper] Authentication error:", message);
-            if (self.onErrorCallback)
-              self.onErrorCallback("Authentication error: " + message);
-          });
-          player.addListener("account_error", ({ message }) => {
-            console.error("[SpotifyLooper] Account error:", message);
-            if (self.onErrorCallback)
-              self.onErrorCallback("Account error: " + message);
-          });
-          player.addListener("playback_error", ({ message }) => {
-            console.error("[SpotifyLooper] Playback error:", message);
-            if (self.onErrorCallback)
-              self.onErrorCallback("Playback error: " + message);
-          });
-
-          // Ready
-          player.addListener("ready", ({ device_id }) => {
-            console.log("[SpotifyLooper] Ready with device ID:", device_id);
-            self.deviceId = device_id;
-            self.isReady = true;
-            if (self.onReadyCallback) self.onReadyCallback(device_id);
-          });
-
-          // Not Ready
-          player.addListener("not_ready", ({ device_id }) => {
-            console.warn("[SpotifyLooper] Device went offline:", device_id);
-            self.isReady = false;
-            if (self.onErrorCallback)
-              self.onErrorCallback("Device went offline: " + device_id);
-          });
-
-          // State changed
-          player.addListener("player_state_changed", (state) => {
-            console.log("[SpotifyLooper] State changed:", state);
-            if (self.onStateChangedCallback) self.onStateChangedCallback(state);
-          });
-
-          // Connect
-          player.connect().then((success) => {
-            if (success) {
-              console.log("[SpotifyLooper] Connected successfully");
-            } else {
-              console.error("[SpotifyLooper] Failed to connect");
-              if (self.onErrorCallback)
-                self.onErrorCallback("Failed to connect to Spotify");
-            }
-          });
-
-          self.player = player;
-        },
-
-        // Play a track using Spotify Web API
-        play: function (deviceId, uri) {
-          console.log("[SpotifyLooper] Playing:", uri, "on device:", deviceId);
-
-          if (!this.accessToken) {
-            console.error("[SpotifyLooper] No access token!");
-            return;
-          }
-
-          fetch(
-            "https://api.spotify.com/v1/me/player/play?device_id=" + deviceId,
-            {
-              method: "PUT",
-              body: JSON.stringify({ uris: [uri] }),
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + this.accessToken,
-              },
-            },
-          )
-            .then((response) => {
-              if (!response.ok) {
-                console.error(
-                  "[SpotifyLooper] Play failed:",
-                  response.status,
-                  response.statusText,
-                );
-                return response.text().then((text) => {
-                  console.error("[SpotifyLooper] Error body:", text);
-                });
-              } else {
-                console.log("[SpotifyLooper] Play started successfully");
-              }
-            })
-            .catch((error) => {
-              console.error("[SpotifyLooper] Play error:", error);
-            });
-        },
-
-        // Update access token
-        setAccessToken: function (token) {
-          console.log("[SpotifyLooper] Access token updated");
-          this.accessToken = token;
-        },
-
-        resume: function () {
-          if (this.player) {
-            this.player.resume();
-          }
-        },
-
-        pause: function () {
-          if (this.player) {
-            this.player.pause();
-          }
-        },
-
-        togglePlayPause: function () {
-          if (this.player) {
-            this.player.togglePlay();
-          }
-        },
-
-        seek: function (positionMs) {
-          if (this.player) {
-            this.player.seek(positionMs);
-          }
-        },
-
-        disconnect: function () {
-          if (this.player) {
-            this.player.disconnect();
-            this.player = null;
-            this.isReady = false;
-          }
-        },
-      };
-
-      // SDK Ready callback - called by Spotify SDK when loaded
-      window.onSpotifyWebPlaybackSDKReady = () => {
-        console.log("[SpotifyLooper] Spotify Web Playback SDK Ready");
-        // If createPlayer was already called, initialize now
-        if (window.spotifyLooper.accessToken && !window.spotifyLooper.player) {
-          window.spotifyLooper._initPlayer(
-            "Spotify Looper",
-            window.spotifyLooper.accessToken,
-          );
-        }
-      };
+        "image": "https://spotify-looper-cc1ad.web.app/icons/Icon-512.png",
+        "screenshot": "https://spotify-looper-cc1ad.web.app/icons/Icon-512.png",
+        "featureList": [
+          "Precision A-B looping",
+          "Spotify integration",
+          "Millisecond accuracy",
+          "Cross-platform (Web & Android)",
+          "Material 3 design"
+        ]
+      }
     </script>
-  </head>
-  <body>
-    <script src="flutter_bootstrap.js" async></script>
-  </body>
+
+  <!-- Spotify Web Playback SDK -->
+  <script src="https://sdk.scdn.co/spotify-player.js"></script>
+
+  <script>
+    // Spotify Looper Web Player Integration
+    window.spotifyLooper = {
+      player: null,
+      deviceId: null,
+      accessToken: null,
+      isReady: false,
+      onReadyCallback: null,
+      onStateChangedCallback: null,
+      onErrorCallback: null,
+
+      // Initialize player with token
+      createPlayer: function (name, token, onReady, onStateChanged, onError) {
+        console.log("[SpotifyLooper] Creating player...");
+        this.accessToken = token;
+        this.onReadyCallback = onReady;
+        this.onStateChangedCallback = onStateChanged;
+        this.onErrorCallback = onError;
+
+        // If SDK already loaded, initialize immediately
+        if (window.Spotify) {
+          console.log("[SpotifyLooper] SDK already loaded, initializing...");
+          this._initPlayer(name, token);
+        } else {
+          console.log("[SpotifyLooper] Waiting for SDK to load...");
+        }
+      },
+
+      _initPlayer: function (name, token) {
+        const self = this;
+
+        const player = new Spotify.Player({
+          name: name,
+          getOAuthToken: (cb) => {
+            console.log("[SpotifyLooper] Token requested");
+            cb(self.accessToken);
+          },
+          volume: 0.5,
+        });
+
+        // Error handling
+        player.addListener("initialization_error", ({ message }) => {
+          console.error("[SpotifyLooper] Initialization error:", message);
+          if (self.onErrorCallback)
+            self.onErrorCallback("Initialization error: " + message);
+        });
+        player.addListener("authentication_error", ({ message }) => {
+          console.error("[SpotifyLooper] Authentication error:", message);
+          if (self.onErrorCallback)
+            self.onErrorCallback("Authentication error: " + message);
+        });
+        player.addListener("account_error", ({ message }) => {
+          console.error("[SpotifyLooper] Account error:", message);
+          if (self.onErrorCallback)
+            self.onErrorCallback("Account error: " + message);
+        });
+        player.addListener("playback_error", ({ message }) => {
+          console.error("[SpotifyLooper] Playback error:", message);
+          if (self.onErrorCallback)
+            self.onErrorCallback("Playback error: " + message);
+        });
+
+        // Ready
+        player.addListener("ready", ({ device_id }) => {
+          console.log("[SpotifyLooper] Ready with device ID:", device_id);
+          self.deviceId = device_id;
+          self.isReady = true;
+          if (self.onReadyCallback) self.onReadyCallback(device_id);
+        });
+
+        // Not Ready
+        player.addListener("not_ready", ({ device_id }) => {
+          console.warn("[SpotifyLooper] Device went offline:", device_id);
+          self.isReady = false;
+          if (self.onErrorCallback)
+            self.onErrorCallback("Device went offline: " + device_id);
+        });
+
+        // State changed
+        player.addListener("player_state_changed", (state) => {
+          console.log("[SpotifyLooper] State changed:", state);
+          if (self.onStateChangedCallback) self.onStateChangedCallback(state);
+        });
+
+        // Connect
+        player.connect().then((success) => {
+          if (success) {
+            console.log("[SpotifyLooper] Connected successfully");
+          } else {
+            console.error("[SpotifyLooper] Failed to connect");
+            if (self.onErrorCallback)
+              self.onErrorCallback("Failed to connect to Spotify");
+          }
+        });
+
+        self.player = player;
+      },
+
+      // Play a track using Spotify Web API
+      play: function (deviceId, uri) {
+        console.log("[SpotifyLooper] Playing:", uri, "on device:", deviceId);
+
+        if (!this.accessToken) {
+          console.error("[SpotifyLooper] No access token!");
+          return;
+        }
+
+        fetch(
+          "https://api.spotify.com/v1/me/player/play?device_id=" + deviceId,
+          {
+            method: "PUT",
+            body: JSON.stringify({ uris: [uri] }),
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + this.accessToken,
+            },
+          },
+        )
+          .then((response) => {
+            if (!response.ok) {
+              console.error(
+                "[SpotifyLooper] Play failed:",
+                response.status,
+                response.statusText,
+              );
+              return response.text().then((text) => {
+                console.error("[SpotifyLooper] Error body:", text);
+              });
+            } else {
+              console.log("[SpotifyLooper] Play started successfully");
+            }
+          })
+          .catch((error) => {
+            console.error("[SpotifyLooper] Play error:", error);
+          });
+      },
+
+      // Update access token
+      setAccessToken: function (token) {
+        console.log("[SpotifyLooper] Access token updated");
+        this.accessToken = token;
+      },
+
+      resume: function () {
+        if (this.player) {
+          this.player.resume();
+        }
+      },
+
+      pause: function () {
+        if (this.player) {
+          this.player.pause();
+        }
+      },
+
+      togglePlayPause: function () {
+        if (this.player) {
+          this.player.togglePlay();
+        }
+      },
+
+      seek: function (positionMs) {
+        if (this.player) {
+          this.player.seek(positionMs);
+        }
+      },
+
+      disconnect: function () {
+        if (this.player) {
+          this.player.disconnect();
+          this.player = null;
+          this.isReady = false;
+        }
+      },
+    };
+
+    // SDK Ready callback - called by Spotify SDK when loaded
+    window.onSpotifyWebPlaybackSDKReady = () => {
+      console.log("[SpotifyLooper] Spotify Web Playback SDK Ready");
+      // If createPlayer was already called, initialize now
+      if (window.spotifyLooper.accessToken && !window.spotifyLooper.player) {
+        window.spotifyLooper._initPlayer(
+          "Spotify Looper",
+          window.spotifyLooper.accessToken,
+        );
+      }
+    };
+  </script>
+</head>
+
+<body>
+  <!-- ── PWA Install Banner ──────────────────────────────────────────── -->
+  <div id="pwa-install-banner" style="
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 99999;
+      padding: 0 16px 16px;
+      pointer-events: none;
+      animation: slideUp .4s cubic-bezier(.4,0,.2,1) forwards;
+    ">
+    <div style="
+        max-width: 480px;
+        margin: 0 auto;
+        background: #1a1a1a;
+        border: 1px solid rgba(255,255,255,.08);
+        border-radius: 20px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        box-shadow: 0 8px 32px rgba(0,0,0,.5), 0 0 0 1px rgba(29,185,84,.1);
+        backdrop-filter: blur(16px);
+        pointer-events: auto;
+      ">
+      <img src="icons/Icon-192.png" alt="Spotify Looper"
+        style="width:48px; height:48px; border-radius:12px; flex-shrink:0;" />
+      <div style="flex:1; min-width:0;">
+        <div style="font-family:system-ui,sans-serif; font-weight:600; font-size:15px; color:#fff; margin-bottom:2px;">
+          Install Spotify Looper
+        </div>
+        <div style="font-family:system-ui,sans-serif; font-size:13px; color:#b3b3b3; line-height:1.4;">
+          Add to your home screen for the best&nbsp;experience
+        </div>
+      </div>
+      <button id="pwa-install-btn" style="
+          background: #1DB954;
+          color: #000;
+          border: none;
+          border-radius: 100px;
+          padding: 10px 20px;
+          font-family: system-ui, sans-serif;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          white-space: nowrap;
+          flex-shrink: 0;
+          transition: background .15s ease;
+        " onmouseover="this.style.background='#1ed760'" onmouseout="this.style.background='#1DB954'">
+        Install
+      </button>
+      <button id="pwa-install-dismiss" aria-label="Dismiss" style="
+          background: none;
+          border: none;
+          color: #6a6a6a;
+          cursor: pointer;
+          padding: 4px;
+          flex-shrink: 0;
+          transition: color .15s ease;
+        " onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#6a6a6a'">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── SW Update Toast ─────────────────────────────────────────────── -->
+  <div id="sw-update-toast" style="
+      display: none;
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 99998;
+      animation: slideDown .35s cubic-bezier(.4,0,.2,1) forwards;
+    ">
+    <div style="
+        background: #232323;
+        border: 1px solid rgba(255,255,255,.08);
+        border-radius: 16px;
+        padding: 14px 20px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        box-shadow: 0 8px 32px rgba(0,0,0,.4);
+        font-family: system-ui, sans-serif;
+      ">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1DB954" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10" />
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+      </svg>
+      <span style="color:#e0e0e0; font-size:14px;">A new version is available</span>
+      <button id="sw-update-btn" style="
+          background: #1DB954;
+          color: #000;
+          border: none;
+          border-radius: 100px;
+          padding: 8px 16px;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          font-family: system-ui, sans-serif;
+          white-space: nowrap;
+          transition: background .15s ease;
+        " onmouseover="this.style.background='#1ed760'" onmouseout="this.style.background='#1DB954'">
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Offline Indicator ───────────────────────────────────────────── -->
+  <div id="offline-indicator" style="
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 99997;
+      background: linear-gradient(90deg, #e74c3c, #c0392b);
+      color: #fff;
+      text-align: center;
+      padding: 6px 16px;
+      font-family: system-ui, sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      animation: slideDown .3s ease forwards;
+    ">
+    ⚡ You're offline — some features may be limited
+  </div>
+
+  <!-- ── Animations ──────────────────────────────────────────────────── -->
+  <style>
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(100%);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-100%);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+
+    #offline-indicator {
+      animation-name: offlineSlide !important;
+    }
+
+    @keyframes offlineSlide {
+      from {
+        transform: translateY(-100%);
+      }
+
+      to {
+        transform: translateY(0);
+      }
+    }
+  </style>
+
+  <!-- ── Flutter App ─────────────────────────────────────────────────── -->
+  <script src="flutter_bootstrap.js" async></script>
+
+  <!-- ── PWA Logic ───────────────────────────────────────────────────── -->
+  <script>
+    // ─── 1. Custom Service Worker Registration ───────────────────────
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', async () => {
+        try {
+          const reg = await navigator.serviceWorker.register('/sw.js', {
+            scope: '/',
+          });
+          console.log('[PWA] Custom SW registered, scope:', reg.scope);
+
+          // Listen for updates
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            if (!newWorker) return;
+
+            newWorker.addEventListener('statechange', () => {
+              if (
+                newWorker.state === 'installed' &&
+                navigator.serviceWorker.controller
+              ) {
+                // New version available — show update toast
+                showUpdateToast(newWorker);
+              }
+            });
+          });
+
+          // Check for updates every 60 minutes
+          setInterval(() => reg.update(), 60 * 60 * 1000);
+        } catch (err) {
+          console.warn('[PWA] SW registration failed:', err);
+        }
+      });
+    }
+
+    // ─── 2. Deferred Install Prompt ──────────────────────────────────
+    let deferredPrompt = null;
+    const DISMISS_KEY = 'pwa-install-dismissed';
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+
+      // Don't show if user previously dismissed (within 7 days)
+      const dismissedAt = localStorage.getItem(DISMISS_KEY);
+      if (dismissedAt) {
+        const daysSince =
+          (Date.now() - parseInt(dismissedAt, 10)) / (1000 * 60 * 60 * 24);
+        if (daysSince < 7) return;
+      }
+
+      // Show banner after a short delay so it doesn't compete with page load
+      setTimeout(() => {
+        const banner = document.getElementById('pwa-install-banner');
+        if (banner) banner.style.display = 'block';
+      }, 3000);
+    });
+
+    // Install button
+    document.getElementById('pwa-install-btn')?.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log('[PWA] Install outcome:', outcome);
+
+      deferredPrompt = null;
+      document.getElementById('pwa-install-banner').style.display = 'none';
+    });
+
+    // Dismiss button
+    document.getElementById('pwa-install-dismiss')?.addEventListener('click', () => {
+      document.getElementById('pwa-install-banner').style.display = 'none';
+      localStorage.setItem(DISMISS_KEY, Date.now().toString());
+    });
+
+    // Hide banner if app was installed
+    window.addEventListener('appinstalled', () => {
+      console.log('[PWA] App installed!');
+      document.getElementById('pwa-install-banner').style.display = 'none';
+      deferredPrompt = null;
+    });
+
+    // ─── 3. SW Update Toast ──────────────────────────────────────────
+    function showUpdateToast(worker) {
+      const toast = document.getElementById('sw-update-toast');
+      if (toast) toast.style.display = 'block';
+
+      document.getElementById('sw-update-btn')?.addEventListener('click', () => {
+        worker.postMessage('skipWaiting');
+        window.location.reload();
+      });
+    }
+
+    // ─── 4. Online/Offline Indicator ─────────────────────────────────
+    function updateOnlineStatus() {
+      const indicator = document.getElementById('offline-indicator');
+      if (!indicator) return;
+      indicator.style.display = navigator.onLine ? 'none' : 'block';
+    }
+
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    window.addEventListener('load', updateOnlineStatus);
+
+    // ─── 5. Display Mode Detection ───────────────────────────────────
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      document.documentElement.classList.add('pwa-standalone');
+      console.log('[PWA] Running in standalone mode');
+    }
+
+    window.matchMedia('(display-mode: standalone)').addEventListener('change', (e) => {
+      if (e.matches) {
+        document.documentElement.classList.add('pwa-standalone');
+      }
+    });
+  </script>
+</body>
+
 </html>
