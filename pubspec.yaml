@@ -50,7 +50,7 @@ dependencies:
 
   # Storage
   shared_preferences: ^2.5.3
-  flutter_secure_storage: ^9.2.4
+  flutter_secure_storage: ^10.0.0
 
   # UI & Theming
   google_fonts: ^6.2.1
@@ -82,6 +82,9 @@ dev_dependencies:
   freezed: ^2.4.0
   json_serializable: ^6.7.0
   riverpod_generator: ^2.3.0
+  
+  # Icon generation
+  icons_launcher: ^3.0.3
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -123,3 +126,19 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Icons Launcher Configuration
+icons_launcher:
+  image_path: "logo.png"
+  platforms:
+    android:
+      enable: true
+      image_path: "logo.png"
+      adaptive_background_color: "#1DB954"
+      adaptive_foreground_image: "logo.png"
+      adaptive_round_image: "logo.png"
+    web:
+      enable: true
+      image_path: "logo.png"
+      favicon_path: "logo.png"
+

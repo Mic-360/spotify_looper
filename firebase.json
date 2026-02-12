@@ -1,0 +1,65 @@
+{
+    "hosting": {
+        "site": "spotify-looper-cc1ad",
+        "public": "build/web",
+        "ignore": [
+            "firebase.json",
+            "**/.*",
+            "**/node_modules/**"
+        ],
+        "headers": [
+            {
+                "source": "**/*",
+                "headers": [
+                    {
+                        "key": "Cache-Control",
+                        "value": "no-cache, no-store, must-revalidate"
+                    },
+                    {
+                        "key": "Pragma",
+                        "value": "no-cache"
+                    },
+                    {
+                        "key": "Expires",
+                        "value": "0"
+                    },
+                    {
+                        "key": "Access-Control-Allow-Origin",
+                        "value": "*"
+                    },
+                    {
+                        "key": "Access-Control-Allow-Methods",
+                        "value": "GET, POST, OPTIONS"
+                    },
+                    {
+                        "key": "Access-Control-Allow-Headers",
+                        "value": "Content-Type, Authorization"
+                    },
+                    {
+                        "key": "Cross-Origin-Opener-Policy",
+                        "value": "same-origin"
+                    },
+                    {
+                        "key": "Cross-Origin-Embedder-Policy",
+                        "value": "credentialless"
+                    }
+                ]
+            },
+            {
+                "source": "**/*.wasm",
+                "headers": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/wasm"
+                    }
+                ]
+            }
+        ],
+        "rewrites": [
+            {
+                "source": "**",
+                "destination": "/index.html"
+            }
+        ]
+    }
+}
