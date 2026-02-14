@@ -180,7 +180,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             left: 0,
             right: 0,
             child: Text(
-              'v1.0.0 • Pulse Loop',
+              'v1.0.2 • Pulse Loop',
               textAlign: TextAlign.center,
               style: textTheme.labelSmall?.copyWith(
                 color: colorScheme.onSurface.withValues(alpha: 0.3),

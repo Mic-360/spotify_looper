@@ -306,7 +306,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final user = ref.watch(currentUserProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final stats = ref.watch(userStatsProvider);
+    ref.watch(userStatsProvider);
     final playlists = ref.watch(playlistsProvider);
     final followedArtists = ref.watch(followedArtistsProvider);
 
@@ -681,7 +681,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildViewToggle(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
 
     return Container(
       padding: const EdgeInsets.all(4),

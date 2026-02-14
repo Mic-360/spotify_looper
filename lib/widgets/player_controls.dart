@@ -18,7 +18,6 @@ class PlayerControls extends ConsumerStatefulWidget {
 
 class _PlayerControlsState extends ConsumerState<PlayerControls>
     with SingleTickerProviderStateMixin {
-
   void _showExpandedPlayer(BuildContext context) {
     final screenHeight = MediaQuery.sizeOf(context).height;
     showModalBottomSheet(
@@ -26,9 +25,7 @@ class _PlayerControlsState extends ConsumerState<PlayerControls>
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      constraints: BoxConstraints(
-        maxHeight: screenHeight * 0.90,
-      ),
+      constraints: BoxConstraints(maxHeight: screenHeight * 0.90),
       builder: (context) => const _ExpandedPlayerCard(),
     );
   }
@@ -41,9 +38,7 @@ class _PlayerControlsState extends ConsumerState<PlayerControls>
       return const SizedBox.shrink();
     }
 
-    return _PillPlayer(
-      onTap: () => _showExpandedPlayer(context),
-    );
+    return _PillPlayer(onTap: () => _showExpandedPlayer(context));
   }
 }
 
@@ -151,10 +146,7 @@ class _PillPlayer extends ConsumerWidget {
             // Skip next
             IconButton(
               onPressed: () => ref.read(playerProvider.notifier).skipNext(),
-              icon: Icon(
-                Icons.skip_next_rounded,
-                color: colorScheme.onSurface,
-              ),
+              icon: Icon(Icons.skip_next_rounded, color: colorScheme.onSurface),
               visualDensity: VisualDensity.compact,
               iconSize: 22,
             ),
@@ -207,7 +199,6 @@ class _MiniPlayPauseButton extends StatelessWidget {
 
 /// Expanded player card shown as modal bottom sheet
 class _ExpandedPlayerCard extends ConsumerWidget {
-
   const _ExpandedPlayerCard();
 
   @override
@@ -237,148 +228,194 @@ class _ExpandedPlayerCard extends ConsumerWidget {
         maxChildSize: 1.0,
         expand: false,
         builder: (context, scrollController) {
-          return SingleChildScrollView(
-            controller: scrollController,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                children: [
-                  // Drag handle
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 12, bottom: 4),
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: colorScheme.onSurfaceVariant
-                              .withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
+          return Column(
+            children: [
+              // Drag handle — always at top
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 12, bottom: 4),
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.3,
                       ),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
+                ),
+              ),
 
-                  // Album art
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24),
-                    child: AspectRatio(
-                      aspectRatio: 1,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.3),
-                              blurRadius: 20,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
+              // Centered content fills remaining space
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Album art size scales with available height
+                    final artSize = (constraints.maxHeight * 0.30).clamp(
+                      120.0,
+                      300.0,
+                    );
+
+                    return SingleChildScrollView(
+                      controller: scrollController,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: constraints.maxHeight,
                         ),
-                        clipBehavior: Clip.antiAlias,
-                        child: track.artworkUrl != null
-                            ? CachedNetworkImage(
-                                imageUrl: track.artworkUrl!,
-                                fit: BoxFit.cover,
-                              )
-                            : Container(
-                                color: colorScheme.primaryContainer,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 22),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Album art
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                                 child: Center(
-                                  child: Icon(
-                                    Icons.music_note_rounded,
-                                    size: 64,
-                                    color: colorScheme.onPrimaryContainer,
+                                  child: SizedBox(
+                                    width: artSize,
+                                    height: artSize,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(24),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.3,
+                                            ),
+                                            blurRadius: 20,
+                                            offset: const Offset(0, 8),
+                                          ),
+                                        ],
+                                      ),
+                                      clipBehavior: Clip.antiAlias,
+                                      child: track.artworkUrl != null
+                                          ? CachedNetworkImage(
+                                              imageUrl: track.artworkUrl!,
+                                              fit: BoxFit.cover,
+                                            )
+                                          : Container(
+                                              color:
+                                                  colorScheme.primaryContainer,
+                                              child: Center(
+                                                child: Icon(
+                                                  Icons.music_note_rounded,
+                                                  size: 64,
+                                                  color: colorScheme
+                                                      .onPrimaryContainer,
+                                                ),
+                                              ),
+                                            ),
+                                    ),
                                   ),
                                 ),
                               ),
+
+                              // Track info
+                              Text(
+                                track.name,
+                                style: textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                track.artistNames,
+                                style: textTheme.bodyLarge?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                              ),
+                              Text(
+                                track.album.name,
+                                style: textTheme.bodyMedium?.copyWith(
+                                  color: colorScheme.onSurfaceVariant
+                                      .withValues(alpha: 0.7),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                              ),
+
+                              // Progress bar
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
+                                child: _buildProgressBar(
+                                  ref,
+                                  playerState,
+                                  colorScheme,
+                                  context,
+                                ),
+                              ),
+
+                              // Main controls
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    IconButton(
+                                      onPressed: () => ref
+                                          .read(playerProvider.notifier)
+                                          .skipPrevious(),
+                                      icon: const Icon(
+                                        Icons.skip_previous_rounded,
+                                      ),
+                                      iconSize: 36,
+                                    ),
+                                    _PlayPauseButton(
+                                      isPlaying: playerState.isPlaying,
+                                      onPressed: () => ref
+                                          .read(playerProvider.notifier)
+                                          .togglePlayPause(),
+                                    ),
+                                    IconButton(
+                                      onPressed: () => ref
+                                          .read(playerProvider.notifier)
+                                          .skipNext(),
+                                      icon: const Icon(Icons.skip_next_rounded),
+                                      iconSize: 36,
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              // Mode selector
+                              const SizedBox(height: 8),
+                              const ModeSelector(),
+
+                              // Range slider if looping/skipping
+                              if (playerState.mode != PlayerMode.normal)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 16),
+                                  child: _buildRangeSlider(
+                                    ref,
+                                    playerState,
+                                    colorScheme,
+                                    context,
+                                  ),
+                                ),
+
+                              const SizedBox(height: 32),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-
-                  // Track info
-                  Text(
-                    track.name,
-                    style: textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    track.artistNames,
-                    style: textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                  ),
-                  Text(
-                    track.album.name,
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant
-                          .withValues(alpha: 0.7),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                  ),
-
-                  // Progress bar
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
-                    child: _buildProgressBar(ref, playerState, colorScheme, context),
-                  ),
-
-                  // Main controls
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        IconButton(
-                          onPressed: () =>
-                              ref.read(playerProvider.notifier).skipPrevious(),
-                          icon: const Icon(Icons.skip_previous_rounded),
-                          iconSize: 36,
-                        ),
-                        _PlayPauseButton(
-                          isPlaying: playerState.isPlaying,
-                          onPressed: () =>
-                              ref.read(playerProvider.notifier).togglePlayPause(),
-                        ),
-                        IconButton(
-                          onPressed: () =>
-                              ref.read(playerProvider.notifier).skipNext(),
-                          icon: const Icon(Icons.skip_next_rounded),
-                          iconSize: 36,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Mode selector
-                  const SizedBox(height: 8),
-                  const ModeSelector(),
-
-                  // Range slider if looping/skipping
-                  if (playerState.mode != PlayerMode.normal)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16),
-                      child: _buildRangeSlider(
-                        ref,
-                        playerState,
-                        colorScheme,
-                        context,
-                      ),
-                    ),
-
-                  const SizedBox(height: 32),
-                ],
+                    );
+                  },
+                ),
               ),
-            ),
+            ],
           );
         },
       ),

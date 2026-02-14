@@ -427,6 +427,16 @@
 
   <!-- ── Animations ──────────────────────────────────────────────────── -->
   <style>
+    /* Ensure Flutter app fills entire viewport */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #121212;
+    }
+
     @keyframes slideUp {
       from {
         opacity: 0;
@@ -553,12 +563,24 @@
     });
 
     // ─── 3. SW Update Toast ──────────────────────────────────────────
+    // On load, check if we just refreshed for an update — hide toast if so
+    if (sessionStorage.getItem('sw-just-updated')) {
+      sessionStorage.removeItem('sw-just-updated');
+      const toast = document.getElementById('sw-update-toast');
+      if (toast) toast.style.display = 'none';
+    }
+
     function showUpdateToast(worker) {
+      // Don't show if we just updated
+      if (sessionStorage.getItem('sw-just-updated')) return;
+
       const toast = document.getElementById('sw-update-toast');
       if (toast) toast.style.display = 'block';
 
       document.getElementById('sw-update-btn')?.addEventListener('click', () => {
         worker.postMessage('skipWaiting');
+        // Mark that we're refreshing for an update
+        sessionStorage.setItem('sw-just-updated', '1');
         window.location.reload();
       });
     }
