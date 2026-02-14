@@ -440,6 +440,16 @@
   <script>
     // ─── 1. Custom Service Worker Registration ───────────────────────
     if ('serviceWorker' in navigator) {
+      let refreshing = false;
+
+      // Reload once when a new SW takes control — prevents infinite loops
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        console.log('[PWA] New service worker activated — reloading');
+        window.location.reload();
+      });
+
       window.addEventListener('load', async () => {
         try {
           const reg = await navigator.serviceWorker.register('/sw.js', {
@@ -457,9 +467,10 @@
                 newWorker.state === 'installed' &&
                 navigator.serviceWorker.controller
               ) {
-                // New version available — silently activate and reload
+                // New version available — tell it to activate immediately.
+                // The controllerchange listener above will handle the reload.
+                console.log('[PWA] New SW installed — requesting activation');
                 newWorker.postMessage('skipWaiting');
-                window.location.reload();
               }
             });
           });

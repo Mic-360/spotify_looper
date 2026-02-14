@@ -26,8 +26,8 @@ self.addEventListener('install', (event) => {
             return cache.addAll(PRECACHE_ASSETS);
         })
     );
-    // Activate immediately — don't wait for old SW to stop
-    self.skipWaiting();
+    // Do NOT call self.skipWaiting() here — the page will send a 'skipWaiting'
+    // message when appropriate to avoid infinite reload loops.
 });
 
 // ── Activate ────────────────────────────────────────────────────────────────
