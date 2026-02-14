@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/track.dart';
+import '../services/media_session_service.dart';
 import '../services/spotify_api_service.dart';
 import '../services/spotify_player_service.dart';
 import 'auth_provider.dart';
@@ -88,6 +89,18 @@ class PlayerNotifier extends StateNotifier<PlaybackState> {
 
   PlayerNotifier(this._ref) : super(PlaybackState.initial) {
     _initializeWebPlayer();
+    _setupMediaSessionHandlers();
+  }
+
+  /// Set up lock screen media controls
+  void _setupMediaSessionHandlers() {
+    if (!kIsWeb) return;
+    MediaSessionService.instance.setActionHandlers(
+      onPlay: () => togglePlayPause(),
+      onPause: () => togglePlayPause(),
+      onNextTrack: () => skipNext(),
+      onPreviousTrack: () => skipPrevious(),
+    );
   }
 
   void _initializeWebPlayer() {
@@ -186,6 +199,9 @@ class PlayerNotifier extends StateNotifier<PlaybackState> {
       loopStartMs: 0,
       loopEndMs: track.durationMs,
     );
+
+    // Update lock screen metadata
+    MediaSessionService.instance.updateMetadata(track, mode: state.mode);
 
     if (kIsWeb && SpotifyPlayerService.instance.isReady) {
       // Use web player
@@ -289,12 +305,20 @@ class PlayerNotifier extends StateNotifier<PlaybackState> {
   /// Update current track
   void setCurrentTrack(SpotifyTrack track) {
     state = state.copyWith(currentTrack: track);
+    MediaSessionService.instance.updateMetadata(track, mode: state.mode);
   }
 
   /// Set player mode
   void setMode(PlayerMode mode) {
     state = state.copyWith(mode: mode);
     debugPrint('PlayerProvider: Mode set to $mode');
+    // Update lock screen to show current mode
+    if (state.currentTrack != null) {
+      MediaSessionService.instance.updateMetadata(
+        state.currentTrack!,
+        mode: mode,
+      );
+    }
   }
 
   /// Set loop range
@@ -400,6 +424,15 @@ class PlayerNotifier extends StateNotifier<PlaybackState> {
     final estimatedPos = _statePositionAtUpdate + elapsed;
 
     state = state.copyWith(positionMs: estimatedPos);
+
+    // Update lock screen playback position (throttle to every ~2s)
+    if (elapsed % 2000 < 150) {
+      MediaSessionService.instance.updatePlaybackState(
+        isPlaying: state.isPlaying,
+        positionMs: estimatedPos,
+        durationMs: state.durationMs,
+      );
+    }
   }
 
   @override

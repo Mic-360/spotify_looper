@@ -119,7 +119,7 @@ class SpotifyPlayerService {
         );
         spotifyLooper.callMethod(
           '_initPlayer'.toJS,
-          'Spotify Looper'.toJS,
+          'Pulse Loop'.toJS,
           accessToken.toJS,
         );
       } else {
