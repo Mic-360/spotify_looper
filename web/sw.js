@@ -47,8 +47,9 @@ self.addEventListener('activate', (event) => {
             );
         })
     );
-    // Take control of all clients immediately
-    self.clients.claim();
+    // Do NOT call self.clients.claim() — it triggers controllerchange on all
+    // open tabs, which can cause reload loops. The new SW will take control
+    // on the next navigation naturally.
 });
 
 // ── Fetch ───────────────────────────────────────────────────────────────────

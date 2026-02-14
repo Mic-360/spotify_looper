@@ -434,22 +434,16 @@
   </style>
 
   <!-- ── Flutter App ─────────────────────────────────────────────────── -->
+  <!--
+    IMPORTANT: Build with - -pwa-strategy none to disable Flutter's built-in
+    service worker (flutter_service_worker.js). We use our own sw.js instead.
+    Build command: flutter build web - -pwa-strategy none
+  -->
   <script src="flutter_bootstrap.js" async></script>
 
-  <!-- ── PWA Logic ───────────────────────────────────────────────────── -->
   <script>
     // ─── 1. Custom Service Worker Registration ───────────────────────
     if ('serviceWorker' in navigator) {
-      let refreshing = false;
-
-      // Reload once when a new SW takes control — prevents infinite loops
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (refreshing) return;
-        refreshing = true;
-        console.log('[PWA] New service worker activated — reloading');
-        window.location.reload();
-      });
-
       window.addEventListener('load', async () => {
         try {
           const reg = await navigator.serviceWorker.register('/sw.js', {
@@ -457,7 +451,7 @@
           });
           console.log('[PWA] Custom SW registered, scope:', reg.scope);
 
-          // Listen for updates
+          // Listen for updates — log only, no reload
           reg.addEventListener('updatefound', () => {
             const newWorker = reg.installing;
             if (!newWorker) return;
@@ -467,10 +461,9 @@
                 newWorker.state === 'installed' &&
                 navigator.serviceWorker.controller
               ) {
-                // New version available — tell it to activate immediately.
-                // The controllerchange listener above will handle the reload.
-                console.log('[PWA] New SW installed — requesting activation');
-                newWorker.postMessage('skipWaiting');
+                // New version installed — it will activate on next navigation.
+                // No forced reload to avoid refresh loops.
+                console.log('[PWA] New SW version installed. Will activate on next visit.');
               }
             });
           });
