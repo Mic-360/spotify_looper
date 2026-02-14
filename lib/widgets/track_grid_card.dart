@@ -173,7 +173,7 @@ class _TrackGridCardState extends State<TrackGridCard>
                   Padding(
                     padding: const EdgeInsets.all(12),
                     child: AspectRatio(
-                      aspectRatio: 1,
+                      aspectRatio: widget.isTall ? 0.85 : 1.0,
                       child: Container(
                         decoration: BoxDecoration(
                           color: pedestalColor,

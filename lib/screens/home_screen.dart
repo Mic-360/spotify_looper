@@ -862,23 +862,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(height: 16),
         LayoutBuilder(
           builder: (context, constraints) {
-            final crossAxisCount = (constraints.maxWidth / 180).floor().clamp(
+            final crossAxisCount = (constraints.maxWidth / 200).floor().clamp(
               2,
               6,
             );
             return MasonryGridView.count(
               crossAxisCount: crossAxisCount,
-              mainAxisSpacing: 14,
-              crossAxisSpacing: 14,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: searchState.results.length,
               itemBuilder: (context, index) {
                 final track = searchState.results[index];
+                // Use a pattern for heights to make the grid feel "Pulse-y"
+                final isTall = index % 3 == 0 || index % 7 == 0;
                 return TrackGridCard(
                   track: track,
                   isPlaying: playerState.currentTrack?.id == track.id,
                   animationIndex: index,
+                  isTall: isTall,
                   onTap: () => _playTrack(track),
                 );
               },
@@ -969,23 +972,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   ) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Calculate dynamic column count based on width:
-        // ~180px per card is a good target for M3E cards
-        final crossAxisCount = (constraints.maxWidth / 180).floor().clamp(2, 8);
+        // Responsiveness: Adjust columns based on available width
+        // ~200px per card works well with the new M3E glass styling
+        int crossAxisCount;
+        if (constraints.maxWidth < 600) {
+          crossAxisCount = 2; // Mobile
+        } else if (constraints.maxWidth < 900) {
+          crossAxisCount = 3; // Small Tablet
+        } else if (constraints.maxWidth < 1200) {
+          crossAxisCount = 4; // Large Tablet / Desktop
+        } else {
+          crossAxisCount = (constraints.maxWidth / 240).floor().clamp(5, 8);
+        }
 
         return MasonryGridView.count(
           crossAxisCount: crossAxisCount,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
+          mainAxisSpacing: 18,
+          crossAxisSpacing: 18,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: tracks.length,
           itemBuilder: (context, index) {
             final track = tracks[index];
+            // Creative logic for staggered height variety
+            final isTall = index % 4 == 0 || index % 9 == 0;
+
             return TrackGridCard(
               track: track,
               isPlaying: playerState.currentTrack?.id == track.id,
               animationIndex: index,
+              isTall: isTall,
               onTap: () => _playTrack(track),
             );
           },
