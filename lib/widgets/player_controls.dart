@@ -26,6 +26,11 @@ class _PlayerControlsState extends ConsumerState<PlayerControls>
       useSafeArea: true,
       backgroundColor: Colors.transparent,
       constraints: BoxConstraints(maxHeight: screenHeight * 0.90),
+      transitionAnimationController: AnimationController(
+        duration: const Duration(milliseconds: 400),
+        reverseDuration: const Duration(milliseconds: 300),
+        vsync: this,
+      ),
       builder: (context) => const _ExpandedPlayerCard(),
     );
   }
@@ -83,7 +88,7 @@ class _PillPlayer extends ConsumerWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(22),
+                borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.2),
@@ -146,7 +151,7 @@ class _PillPlayer extends ConsumerWidget {
             // Skip next
             IconButton(
               onPressed: () => ref.read(playerProvider.notifier).skipNext(),
-              icon: Icon(Icons.skip_next_rounded, color: colorScheme.onSurface),
+              icon: Icon(Icons.skip_next_rounded, color: colorScheme.primary),
               visualDensity: VisualDensity.compact,
               iconSize: 22,
             ),
@@ -279,11 +284,18 @@ class _ExpandedPlayerCard extends ConsumerWidget {
                                     height: artSize,
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(24),
+                                        borderRadius: BorderRadius.circular(28),
                                         boxShadow: [
                                           BoxShadow(
+                                            color: colorScheme.primary
+                                                .withValues(alpha: 0.25),
+                                            blurRadius: 30,
+                                            spreadRadius: 4,
+                                            offset: const Offset(0, 8),
+                                          ),
+                                          BoxShadow(
                                             color: Colors.black.withValues(
-                                              alpha: 0.3,
+                                              alpha: 0.25,
                                             ),
                                             blurRadius: 20,
                                             offset: const Offset(0, 8),
@@ -355,7 +367,6 @@ class _ExpandedPlayerCard extends ConsumerWidget {
                                 ),
                               ),
 
-                              // Main controls
                               Padding(
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 16,
@@ -368,8 +379,9 @@ class _ExpandedPlayerCard extends ConsumerWidget {
                                       onPressed: () => ref
                                           .read(playerProvider.notifier)
                                           .skipPrevious(),
-                                      icon: const Icon(
+                                      icon: Icon(
                                         Icons.skip_previous_rounded,
+                                        color: colorScheme.primary,
                                       ),
                                       iconSize: 36,
                                     ),
@@ -383,7 +395,10 @@ class _ExpandedPlayerCard extends ConsumerWidget {
                                       onPressed: () => ref
                                           .read(playerProvider.notifier)
                                           .skipNext(),
-                                      icon: const Icon(Icons.skip_next_rounded),
+                                      icon: Icon(
+                                        Icons.skip_next_rounded,
+                                        color: colorScheme.primary,
+                                      ),
                                       iconSize: 36,
                                     ),
                                   ],
@@ -567,14 +582,14 @@ class _PlayPauseButtonState extends State<_PlayPauseButton>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 100),
+      duration: const Duration(milliseconds: 250),
       vsync: this,
     );
 
     _scaleAnimation = Tween<double>(
       begin: 1.0,
-      end: 0.9,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+      end: 0.88,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
   }
 
   @override

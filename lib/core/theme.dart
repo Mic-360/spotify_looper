@@ -167,7 +167,7 @@ class AppTheme {
 
   /// Build text theme with Google Fonts
   static TextTheme _buildTextTheme(ColorScheme colorScheme) {
-    final baseTextTheme = GoogleFonts.interTextTheme();
+    final baseTextTheme = GoogleFonts.outfitTextTheme();
 
     return baseTextTheme.copyWith(
       displayLarge: baseTextTheme.displayLarge?.copyWith(

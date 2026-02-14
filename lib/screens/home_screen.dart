@@ -288,7 +288,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: _handleLogout,
-                icon: const Icon(Icons.logout),
+                icon: Icon(Icons.logout, color: colorScheme.error),
                 label: const Text('Logout'),
               ),
             ),
@@ -483,7 +483,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.logout_rounded, size: 18, color: colorScheme.onErrorContainer),
+                      Icon(
+                        Icons.logout_rounded,
+                        size: 18,
+                        color: colorScheme.onErrorContainer,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'Sign Out',
@@ -526,9 +530,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(height: 6),
         Text(
           value,
-          style: textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         Text(
           label,
@@ -640,10 +642,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           prefixIcon: Padding(
             padding: const EdgeInsets.only(left: 16, right: 8),
-            child: Icon(
-              Icons.search_rounded,
-              color: colorScheme.onSurfaceVariant,
-            ),
+            child: Icon(Icons.search_rounded, color: colorScheme.primary),
           ),
           prefixIconConstraints: const BoxConstraints(
             minWidth: 48,
@@ -726,8 +725,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOutCubic,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.elasticOut,
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? colorScheme.primary : Colors.transparent,
@@ -846,8 +845,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           data: (tracks) => tracks.isEmpty
               ? _buildEmptyState(context, 'No top tracks yet')
               : _viewMode == ViewMode.grid
-                  ? _buildStaggeredGrid(tracks, playerState)
-                  : _buildTrackList(tracks, playerState),
+              ? _buildStaggeredGrid(tracks, playerState)
+              : _buildTrackList(tracks, playerState),
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => _buildErrorState(context, error.toString()),
         ),
@@ -878,8 +877,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             return deduplicated.isEmpty
                 ? _buildEmptyState(context, 'No recently played tracks')
                 : _viewMode == ViewMode.grid
-                    ? _buildStaggeredGrid(deduplicated, playerState)
-                    : _buildTrackList(deduplicated, playerState);
+                ? _buildStaggeredGrid(deduplicated, playerState)
+                : _buildTrackList(deduplicated, playerState);
           },
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => _buildErrorState(context, error.toString()),
@@ -904,8 +903,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   ) {
     return MasonryGridView.count(
       crossAxisCount: 2,
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
+      mainAxisSpacing: 14,
+      crossAxisSpacing: 14,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: tracks.length,
@@ -914,11 +913,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         // Alternate between taller and shorter for staggered effect
         final isTall = index % 3 == 0;
         return SizedBox(
-          height: isTall ? 240 : 200,
+          height: isTall ? 250 : 210,
           child: TrackGridCard(
             track: track,
             isPlaying: playerState.currentTrack?.id == track.id,
             isTall: isTall,
+            animationIndex: index,
             onTap: () => _playTrack(track),
           ),
         );
@@ -926,10 +926,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildTrackList(
-    List<SpotifyTrack> tracks,
-    PlaybackState playerState,
-  ) {
+  Widget _buildTrackList(List<SpotifyTrack> tracks, PlaybackState playerState) {
     return Column(
       children: tracks
           .map(
