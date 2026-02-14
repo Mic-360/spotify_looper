@@ -5,8 +5,8 @@ import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:spotify_looper/core/responsive.dart';
 
+import '../models/player_state.dart';
 import '../providers/player_provider.dart';
 import 'mode_selector.dart';
 
@@ -280,6 +280,17 @@ class _ExpandedPlayerCard extends ConsumerWidget {
     }
   }
 
+  IconData _getRepeatIcon(RepeatMode mode) {
+    switch (mode) {
+      case RepeatMode.off:
+        return Icons.repeat_rounded;
+      case RepeatMode.track:
+        return Icons.repeat_one_rounded;
+      case RepeatMode.context:
+        return Icons.repeat_rounded;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final playerState = ref.watch(playerProvider);
@@ -472,6 +483,19 @@ class _ExpandedPlayerCard extends ConsumerWidget {
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceEvenly,
                                       children: [
+                                        // Shuffle button
+                                        IconButton(
+                                          onPressed: () => ref
+                                              .read(playerProvider.notifier)
+                                              .toggleShuffle(),
+                                          icon: Icon(
+                                            Icons.shuffle_rounded,
+                                            color: playerState.shuffleEnabled
+                                                ? modeColor
+                                                : colorScheme.onSurfaceVariant,
+                                          ),
+                                          iconSize: 24,
+                                        ),
                                         IconButton(
                                           onPressed: () => ref
                                               .read(playerProvider.notifier)
@@ -498,6 +522,23 @@ class _ExpandedPlayerCard extends ConsumerWidget {
                                             color: modeColor,
                                           ),
                                           iconSize: 36,
+                                        ),
+                                        // Repeat button
+                                        IconButton(
+                                          onPressed: () => ref
+                                              .read(playerProvider.notifier)
+                                              .cycleRepeatMode(),
+                                          icon: Icon(
+                                            _getRepeatIcon(
+                                              playerState.repeatMode,
+                                            ),
+                                            color:
+                                                playerState.repeatMode !=
+                                                    RepeatMode.off
+                                                ? modeColor
+                                                : colorScheme.onSurfaceVariant,
+                                          ),
+                                          iconSize: 24,
                                         ),
                                       ],
                                     ),

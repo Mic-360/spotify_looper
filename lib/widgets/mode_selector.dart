@@ -17,28 +17,33 @@ class ModeSelector extends ConsumerWidget {
         borderRadius: BorderRadius.circular(100),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          _ModeButton(
-            mode: PlayerMode.normal,
-            icon: Icons.play_arrow_rounded,
-            label: 'Normal',
-            isSelected: playerState.mode == PlayerMode.normal,
-            activeColor: colorScheme.primary,
+          Expanded(
+            child: _ModeButton(
+              mode: PlayerMode.normal,
+              icon: Icons.play_arrow_rounded,
+              label: 'Normal',
+              isSelected: playerState.mode == PlayerMode.normal,
+              activeColor: colorScheme.primary,
+            ),
           ),
-          _ModeButton(
-            mode: PlayerMode.loop,
-            icon: Icons.loop_rounded,
-            label: 'Loop',
-            isSelected: playerState.mode == PlayerMode.loop,
-            activeColor: colorScheme.tertiary,
+          Expanded(
+            child: _ModeButton(
+              mode: PlayerMode.loop,
+              icon: Icons.loop_rounded,
+              label: 'Loop',
+              isSelected: playerState.mode == PlayerMode.loop,
+              activeColor: colorScheme.tertiary,
+            ),
           ),
-          _ModeButton(
-            mode: PlayerMode.skip,
-            icon: Icons.skip_next_rounded,
-            label: 'Skip',
-            isSelected: playerState.mode == PlayerMode.skip,
-            activeColor: colorScheme.secondary,
+          Expanded(
+            child: _ModeButton(
+              mode: PlayerMode.skip,
+              icon: Icons.skip_next_rounded,
+              label: 'Skip',
+              isSelected: playerState.mode == PlayerMode.skip,
+              activeColor: colorScheme.secondary,
+            ),
           ),
         ],
       ),
@@ -108,7 +113,7 @@ class _ModeButtonState extends ConsumerState<_ModeButton>
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 350),
           curve: Curves.elasticOut,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: widget.isSelected
                 ? widget.activeColor.withValues(alpha: 0.18)
@@ -122,6 +127,7 @@ class _ModeButtonState extends ConsumerState<_ModeButton>
                 : null,
           ),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
               AnimatedSwitcher(
@@ -138,11 +144,11 @@ class _ModeButtonState extends ConsumerState<_ModeButton>
                       : colorScheme.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 4),
               AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 300),
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: widget.isSelected
                       ? FontWeight.w700
                       : FontWeight.w500,

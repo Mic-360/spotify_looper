@@ -322,13 +322,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   Widget _buildLogo(bool isDark, ColorScheme colorScheme) {
     return Container(
-      width: 80,
-      height: 80,
+      width: 100,
+      height: 100,
       decoration: BoxDecoration(
         color: isDark
             ? colorScheme.primary.withValues(alpha: 0.15)
             : Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
             color: colorScheme.primary.withValues(alpha: 0.1),
@@ -337,13 +337,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           ),
         ],
       ),
-      child: Center(
-        child: Icon(
-          Icons.library_music_rounded,
-          size: 40,
-          color: colorScheme.primary,
-        ),
-      ),
+      padding: const EdgeInsets.all(16),
+      child: Image.asset('assets/logo.png', fit: BoxFit.contain),
     );
   }
 

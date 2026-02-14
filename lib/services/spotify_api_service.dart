@@ -54,6 +54,21 @@ class SpotifyApiService {
     return SpotifyUserProfile.fromJson(data);
   }
 
+  /// Get a single track by ID
+  Future<SpotifyTrack> getTrack(String id) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/tracks/$id'),
+      headers: _headers,
+    );
+
+    if (response.statusCode != 200) {
+      throw SpotifyApiException('Failed to get track: ${response.body}');
+    }
+
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    return SpotifyTrack.fromJson(data);
+  }
+
   /// Search for tracks
   Future<List<SpotifyTrack>> searchTracks(
     String query, {

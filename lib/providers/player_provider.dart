@@ -23,6 +23,8 @@ class PlaybackState {
   final PlayerMode mode;
   final int loopStartMs;
   final int loopEndMs;
+  final RepeatMode repeatMode;
+  final bool shuffleEnabled;
 
   const PlaybackState({
     this.isPlaying = false,
@@ -36,6 +38,8 @@ class PlaybackState {
     this.mode = PlayerMode.normal,
     this.loopStartMs = 0,
     this.loopEndMs = 0,
+    this.repeatMode = RepeatMode.off,
+    this.shuffleEnabled = false,
   });
 
   double get progress => durationMs > 0 ? positionMs / durationMs : 0;
@@ -64,6 +68,8 @@ class PlaybackState {
     PlayerMode? mode,
     int? loopStartMs,
     int? loopEndMs,
+    RepeatMode? repeatMode,
+    bool? shuffleEnabled,
   }) => PlaybackState(
     isPlaying: isPlaying ?? this.isPlaying,
     isPaused: isPaused ?? this.isPaused,
@@ -72,10 +78,12 @@ class PlaybackState {
     durationMs: durationMs ?? this.durationMs,
     deviceId: deviceId ?? this.deviceId,
     isWebPlayer: isWebPlayer ?? this.isWebPlayer,
-    error: error,
+    error: error ?? this.error,
     mode: mode ?? this.mode,
     loopStartMs: loopStartMs ?? this.loopStartMs,
     loopEndMs: loopEndMs ?? this.loopEndMs,
+    repeatMode: repeatMode ?? this.repeatMode,
+    shuffleEnabled: shuffleEnabled ?? this.shuffleEnabled,
   );
 
   static const PlaybackState initial = PlaybackState();
@@ -88,7 +96,7 @@ class PlayerNotifier extends StateNotifier<PlaybackState> {
   int _statePositionAtUpdate = 0;
 
   PlayerNotifier(this._ref) : super(PlaybackState.initial) {
-    _initializeWebPlayer();
+    _initializeServiceListeners();
     _setupMediaSessionHandlers();
   }
 
@@ -103,41 +111,54 @@ class PlayerNotifier extends StateNotifier<PlaybackState> {
     );
   }
 
-  void _initializeWebPlayer() {
-    if (kIsWeb) {
-      // Listen to token changes and update service
-      _ref.listen<String?>(accessTokenProvider, (previous, next) {
-        if (next != null && next != previous) {
-          SpotifyPlayerService.instance.updateToken(next);
-        }
-      });
+  void _initializeServiceListeners() {
+    // Listen to token changes and update service
+    _ref.listen<String?>(accessTokenProvider, (previous, next) {
+      if (next != null && next != previous) {
+        SpotifyPlayerService.instance.updateToken(next);
+      }
+    });
 
-      // Listen to web player state changes
-      SpotifyPlayerService.instance.stateStream.listen((playerState) {
-        _lastStateUpdateTime = DateTime.now();
-        _statePositionAtUpdate = playerState.positionMs;
+    // Listen to player state changes
+    SpotifyPlayerService.instance.stateStream.listen((playerState) {
+      _lastStateUpdateTime = DateTime.now();
+      _statePositionAtUpdate = playerState.positionMs;
 
-        state = state.copyWith(
-          isPlaying: playerState.isPlaying,
-          isPaused: playerState.isPaused,
-          positionMs: playerState.positionMs,
-          durationMs: playerState.durationMs,
-          isWebPlayer: true,
-        );
+      // Handle track change from external source (e.g. Spotify app)
+      if (playerState.trackUri != null &&
+          playerState.trackUri != state.currentTrack?.uri) {
+        _handleTrackChange(playerState.trackUri!);
+      }
 
-        _updateTimer();
-        _handlePlaybackLogic();
-      });
+      state = state.copyWith(
+        isPlaying: playerState.isPlaying,
+        isPaused: playerState.isPaused,
+        positionMs: playerState.positionMs,
+        durationMs: playerState.durationMs > 0
+            ? playerState.durationMs
+            : state.durationMs,
+        repeatMode: playerState.repeatMode,
+        shuffleEnabled: playerState.shuffleEnabled,
+        // We consider it "web player" mode if driven by SDK,
+        // to avoid polling API. Maybe rename isWebPlayer to isSdkPlayer later.
+        isWebPlayer: true,
+      );
 
-      // Listen for device ID and transfer playback
-      SpotifyPlayerService.instance.readyStream.listen((isReady) async {
-        if (isReady) {
-          final deviceId = SpotifyPlayerService.instance.deviceId;
+      _updateTimer();
+      _handlePlaybackLogic();
+    });
+
+    // Listen for device ID (Web) or general readiness (Mobile)
+    SpotifyPlayerService.instance.readyStream.listen((isReady) async {
+      if (isReady) {
+        final deviceId = SpotifyPlayerService.instance.deviceId;
+        if (deviceId != null) {
           state = state.copyWith(deviceId: deviceId, isWebPlayer: true);
 
-          // Transfer playback to this new device (non-blocking)
+          // Transfer playback to this new device (mainly for Web)
           final token = _ref.read(accessTokenProvider);
-          if (token != null && deviceId != null) {
+          if (kIsWeb && token != null) {
+            // Only transfer on web automatically for now
             try {
               final api = SpotifyApiService(token);
               await api.transferPlayback(deviceId, play: false);
@@ -148,24 +169,27 @@ class PlayerNotifier extends StateNotifier<PlaybackState> {
               debugPrint('PlayerProvider: Failed to transfer playback: $e');
             }
           }
+        } else {
+          // Mobile SDK doesn't expose device ID easily, but isReady means we can play
+          state = state.copyWith(isWebPlayer: true);
         }
-      });
-    }
+      }
+    });
   }
 
-  /// Initialize web playback SDK
+  /// Initialize playback SDK (Web or Mobile)
   Future<void> initializePlayer() async {
-    if (!kIsWeb) return;
-
     final token = _ref.read(accessTokenProvider);
     if (token == null) return;
 
     await SpotifyPlayerService.instance.initialize(token);
 
-    if (SpotifyPlayerService.instance.deviceId != null) {
+    if (SpotifyPlayerService.instance.isReady) {
+      final deviceId = SpotifyPlayerService.instance.deviceId;
       state = state.copyWith(
-        deviceId: SpotifyPlayerService.instance.deviceId,
-        isWebPlayer: true,
+        deviceId: deviceId,
+        isWebPlayer:
+            true, // Treating SDK controlled as "isWebPlayer" for visual logic
       );
     }
   }
@@ -199,15 +223,16 @@ class PlayerNotifier extends StateNotifier<PlaybackState> {
       isPaused: false,
       error: null,
       loopStartMs: 0,
+      durationMs: track.durationMs,
       loopEndMs: isSkipMode ? 0 : track.durationMs,
     );
 
     // Update lock screen metadata
     MediaSessionService.instance.updateMetadata(track, mode: state.mode);
 
-    if (kIsWeb && SpotifyPlayerService.instance.isReady) {
-      // Use web player
-      debugPrint('Playing via Web Playback SDK');
+    if (SpotifyPlayerService.instance.isReady) {
+      // Use SDK
+      debugPrint('Playing via Spotify SDK');
       await SpotifyPlayerService.instance.play(track.uri);
     } else {
       // Use Spotify Connect API
@@ -242,7 +267,7 @@ class PlayerNotifier extends StateNotifier<PlaybackState> {
     final token = _ref.read(accessTokenProvider);
     if (token == null) return;
 
-    if (kIsWeb && SpotifyPlayerService.instance.isReady) {
+    if (SpotifyPlayerService.instance.isReady) {
       await SpotifyPlayerService.instance.togglePlayPause();
     } else {
       final api = SpotifyApiService(token);
@@ -262,11 +287,15 @@ class PlayerNotifier extends StateNotifier<PlaybackState> {
     final token = _ref.read(accessTokenProvider);
     if (token == null) return;
 
-    try {
-      final api = SpotifyApiService(token);
-      await api.skipToNext(deviceId: state.deviceId);
-    } catch (e) {
-      debugPrint('Failed to skip: $e');
+    if (SpotifyPlayerService.instance.isReady) {
+      await SpotifyPlayerService.instance.skipNext();
+    } else {
+      try {
+        final api = SpotifyApiService(token);
+        await api.skipToNext(deviceId: state.deviceId);
+      } catch (e) {
+        debugPrint('Failed to skip: $e');
+      }
     }
   }
 
@@ -275,11 +304,15 @@ class PlayerNotifier extends StateNotifier<PlaybackState> {
     final token = _ref.read(accessTokenProvider);
     if (token == null) return;
 
-    try {
-      final api = SpotifyApiService(token);
-      await api.skipToPrevious(deviceId: state.deviceId);
-    } catch (e) {
-      debugPrint('Failed to skip: $e');
+    if (SpotifyPlayerService.instance.isReady) {
+      await SpotifyPlayerService.instance.skipPrevious();
+    } else {
+      try {
+        final api = SpotifyApiService(token);
+        await api.skipToPrevious(deviceId: state.deviceId);
+      } catch (e) {
+        debugPrint('Failed to skip: $e');
+      }
     }
   }
 
@@ -289,7 +322,7 @@ class PlayerNotifier extends StateNotifier<PlaybackState> {
     _lastStateUpdateTime = DateTime.now();
     state = state.copyWith(positionMs: positionMs);
 
-    if (kIsWeb && SpotifyPlayerService.instance.isReady) {
+    if (SpotifyPlayerService.instance.isReady) {
       await SpotifyPlayerService.instance.seek(positionMs);
     } else {
       final token = _ref.read(accessTokenProvider);
@@ -308,6 +341,29 @@ class PlayerNotifier extends StateNotifier<PlaybackState> {
   void setCurrentTrack(SpotifyTrack track) {
     state = state.copyWith(currentTrack: track);
     MediaSessionService.instance.updateMetadata(track, mode: state.mode);
+  }
+
+  /// Handle track change from SDK
+  Future<void> _handleTrackChange(String trackUri) async {
+    final token = _ref.read(accessTokenProvider);
+    if (token == null) return;
+
+    try {
+      final api = SpotifyApiService(token);
+      final trackId = trackUri.split(':').last;
+      final track = await api.getTrack(trackId);
+      final isSkipMode = state.mode == PlayerMode.skip;
+
+      state = state.copyWith(
+        currentTrack: track,
+        durationMs: track.durationMs,
+        // If switching to a new track, reset loopEnd if it was the full old track
+        loopEndMs: isSkipMode ? state.loopEndMs : track.durationMs,
+      );
+      MediaSessionService.instance.updateMetadata(track, mode: state.mode);
+    } catch (e) {
+      debugPrint('PlayerProvider: Failed to fetch track on change: $e');
+    }
   }
 
   /// Set player mode
@@ -342,6 +398,32 @@ class PlayerNotifier extends StateNotifier<PlaybackState> {
         mode: mode,
       );
     }
+  }
+
+  /// Toggle repeat mode
+  Future<void> cycleRepeatMode() async {
+    RepeatMode nextMode;
+    switch (state.repeatMode) {
+      case RepeatMode.off:
+        nextMode = RepeatMode.context;
+        break;
+      case RepeatMode.context:
+        nextMode = RepeatMode.track;
+        break;
+      case RepeatMode.track:
+        nextMode = RepeatMode.off;
+        break;
+    }
+
+    state = state.copyWith(repeatMode: nextMode);
+    await SpotifyPlayerService.instance.setRepeatMode(nextMode);
+  }
+
+  /// Toggle shuffle
+  Future<void> toggleShuffle() async {
+    final nextShuffle = !state.shuffleEnabled;
+    state = state.copyWith(shuffleEnabled: nextShuffle);
+    await SpotifyPlayerService.instance.setShuffle(nextShuffle);
   }
 
   /// Set loop range
@@ -471,10 +553,7 @@ final playerProvider = StateNotifierProvider<PlayerNotifier, PlaybackState>((
   return PlayerNotifier(ref);
 });
 
-/// Provider for web player ready state
-final webPlayerReadyProvider = StreamProvider<bool>((ref) {
-  if (!kIsWeb) {
-    return Stream.value(false);
-  }
+/// Provider for player ready state
+final playerReadyProvider = StreamProvider<bool>((ref) {
   return SpotifyPlayerService.instance.readyStream;
 });
