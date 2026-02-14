@@ -266,6 +266,44 @@
         }
       },
 
+      skipNext: function () {
+        if (this.player) {
+          this.player.nextTrack();
+        }
+      },
+
+      skipPrevious: function () {
+        if (this.player) {
+          this.player.previousTrack();
+        }
+      },
+
+      setRepeatMode: function (mode) {
+        if (!this.accessToken) return;
+        fetch(
+          "https://api.spotify.com/v1/me/player/repeat?state=" +
+          mode +
+          (this.deviceId ? "&device_id=" + this.deviceId : ""),
+          {
+            method: "PUT",
+            headers: { Authorization: "Bearer " + this.accessToken },
+          },
+        ).catch((e) => console.error("[SpotifyLooper] SetRepeatMode error:", e));
+      },
+
+      setShuffle: function (enabled) {
+        if (!this.accessToken) return;
+        fetch(
+          "https://api.spotify.com/v1/me/player/shuffle?state=" +
+          enabled +
+          (this.deviceId ? "&device_id=" + this.deviceId : ""),
+          {
+            method: "PUT",
+            headers: { Authorization: "Bearer " + this.accessToken },
+          },
+        ).catch((e) => console.error("[SpotifyLooper] SetShuffle error:", e));
+      },
+
       disconnect: function () {
         if (this.player) {
           this.player.disconnect();

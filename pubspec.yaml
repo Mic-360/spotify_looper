@@ -99,6 +99,7 @@ flutter:
 
   assets:
     - .env.json
+    - assets/logo.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -133,7 +134,7 @@ icons_launcher:
     android:
       enable: true
       image_path: "logo.png"
-      adaptive_background_color: "#1DB954"
+      adaptive_background_color: "#B2AC88"
       adaptive_foreground_image: "logo.png"
       adaptive_round_image: "logo.png"
     web:
