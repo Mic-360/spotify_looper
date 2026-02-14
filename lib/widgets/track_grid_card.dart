@@ -275,8 +275,8 @@ class _TrackGridCardState extends State<TrackGridCard>
                             // Playing Label (Pedestal style)
                             if (widget.isPlaying)
                               Positioned(
-                                top: -6,
-                                left: -6,
+                                top: 0,
+                                left: 4,
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 10,

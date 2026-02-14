@@ -1,6 +1,7 @@
 /// Home screen with M3E design — collapsing title, staggered grid, pill player.
 library;
 
+import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -621,53 +622,74 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.primary.withValues(alpha: 0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: TextField(
-        controller: _searchController,
-        focusNode: _searchFocusNode,
-        onChanged: (value) {
-          ref.read(searchNotifierProvider.notifier).updateQuery(value);
-          setState(() {}); // Rebuild for clear button
-        },
-        style: textTheme.bodyLarge,
-        decoration: InputDecoration(
-          hintText: 'Search songs, artists, albums...',
-          hintStyle: textTheme.bodyLarge?.copyWith(
-            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-          ),
-          prefixIcon: Padding(
-            padding: const EdgeInsets.only(left: 16, right: 8),
-            child: Icon(Icons.search_rounded, color: colorScheme.primary),
-          ),
-          prefixIconConstraints: const BoxConstraints(
-            minWidth: 48,
-            minHeight: 48,
-          ),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.close_rounded,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    onPressed: () {
-                      _searchController.clear();
-                      ref.read(searchNotifierProvider.notifier).clearSearch();
-                      setState(() {});
-                    },
-                  ),
-                )
-              : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: colorScheme.primary.withValues(alpha: 0.15),
+                width: 1.5,
+              ),
+            ),
+            child: TextField(
+              controller: _searchController,
+              focusNode: _searchFocusNode,
+              onChanged: (value) {
+                ref.read(searchNotifierProvider.notifier).updateQuery(value);
+                setState(() {}); // Rebuild for clear button
+              },
+              style: textTheme.bodyLarge,
+              decoration: InputDecoration(
+                hintText: 'Search songs, artists, albums...',
+                hintStyle: textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                ),
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 16, right: 8),
+                  child: Icon(Icons.search_rounded, color: colorScheme.primary),
+                ),
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 48,
+                  minHeight: 48,
+                ),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.close_rounded,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          onPressed: () {
+                            _searchController.clear();
+                            ref
+                                .read(searchNotifierProvider.notifier)
+                                .clearSearch();
+                            setState(() {});
+                          },
+                        ),
+                      )
+                    : null,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -681,33 +703,60 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildViewToggle(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildToggleButton(
-              context,
-              icon: Icons.grid_view_rounded,
-              label: 'Grid',
-              isSelected: _viewMode == ViewMode.grid,
-              onTap: () => setState(() => _viewMode = ViewMode.grid),
+    return Center(
+      child: Container(
+        width: 200,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(100),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(100),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.3,
+                ),
+                borderRadius: BorderRadius.circular(100),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildToggleButton(
+                      context,
+                      icon: Icons.grid_view_rounded,
+                      label: 'Grid',
+                      isSelected: _viewMode == ViewMode.grid,
+                      onTap: () => setState(() => _viewMode = ViewMode.grid),
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildToggleButton(
+                      context,
+                      icon: Icons.view_list_rounded,
+                      label: 'List',
+                      isSelected: _viewMode == ViewMode.list,
+                      onTap: () => setState(() => _viewMode = ViewMode.list),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          Expanded(
-            child: _buildToggleButton(
-              context,
-              icon: Icons.view_list_rounded,
-              label: 'List',
-              isSelected: _viewMode == ViewMode.list,
-              onTap: () => setState(() => _viewMode = ViewMode.list),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -725,17 +774,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.elasticOut,
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected
+              ? colorScheme.primary.withValues(alpha: 0.8)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(100),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.25),
-                    blurRadius: 8,
+                    color: colorScheme.primary.withValues(alpha: 0.3),
+                    blurRadius: 12,
                     offset: const Offset(0, 2),
                   ),
                 ]
