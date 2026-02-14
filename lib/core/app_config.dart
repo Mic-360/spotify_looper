@@ -2,6 +2,7 @@
 library;
 
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 class AppConfig {
@@ -47,18 +48,23 @@ class AppConfig {
     }
   }
 
-  // OAuth Configuration
-  static const String redirectUriWeb = 'http://127.0.0.1:8000/callback';
+  // ── Environment-aware OAuth Configuration ─────────────────────────
+  static const String _prodBaseUrl = 'https://spotify-looper-cc1ad.web.app';
+  static const String _devBaseUrl = 'http://127.0.0.1:8000';
+
+  /// Web base URL: production in release builds, localhost in debug/profile.
+  static String get webBaseUrl => kReleaseMode ? _prodBaseUrl : _devBaseUrl;
+
+  /// Web redirect URI (scheme + host derived from build mode)
+  static String get redirectUriWeb => '$webBaseUrl/callback';
+
+  /// Web callback URL scheme (https in prod, http in dev)
+  static String get webCallbackScheme => kReleaseMode ? 'https' : 'http';
+
   static const String redirectUriAndroid = 'spotify-looper://callback';
 
   /// Get the appropriate redirect URI based on platform
-  static String get redirectUri {
-    // Check if running on web
-    if (identical(0, 0.0)) {
-      return redirectUriWeb;
-    }
-    return redirectUriAndroid;
-  }
+  static String get redirectUri => kIsWeb ? redirectUriWeb : redirectUriAndroid;
 
   /// All Spotify OAuth scopes for maximum data extraction
   static const List<String> spotifyScopes = [

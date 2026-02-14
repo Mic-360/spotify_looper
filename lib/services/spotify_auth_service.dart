@@ -72,7 +72,9 @@ class SpotifyAuthService {
       );
 
       // Open browser for authentication
-      final callbackUrlScheme = kIsWeb ? 'http' : 'spotify-looper';
+      final callbackUrlScheme = kIsWeb
+          ? AppConfig.webCallbackScheme
+          : 'spotify-looper';
 
       final result = await FlutterWebAuth2.authenticate(
         url: authUrl.toString(),
