@@ -18,7 +18,6 @@ class PlayerControls extends ConsumerStatefulWidget {
 }
 
 class _PlayerControlsState extends ConsumerState<PlayerControls> {
-
   void _showExpandedPlayer() {
     showModalBottomSheet(
       context: context,
@@ -26,7 +25,9 @@ class _PlayerControlsState extends ConsumerState<PlayerControls> {
       backgroundColor: Colors.transparent,
       elevation: 0,
       barrierColor: Colors.black.withValues(alpha: 0.5),
-      constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.85),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+      ),
       builder: (context) => const _ExpandedPlayerCard(),
     );
   }
@@ -704,8 +705,6 @@ class _PlayPauseButtonState extends State<_PlayPauseButton>
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     final borderRadius = widget.isPlaying
         ? BorderRadius.circular(20)
         : BorderRadius.circular(32);

@@ -191,13 +191,15 @@ class PlayerNotifier extends StateNotifier<PlaybackState> {
     }
 
     // Clear any previous error and reset loop range
+    // If in Skip mode, start with an empty range to avoid skipping the whole track
+    final isSkipMode = state.mode == PlayerMode.skip;
     state = state.copyWith(
       currentTrack: track,
       isPlaying: true,
       isPaused: false,
       error: null,
       loopStartMs: 0,
-      loopEndMs: track.durationMs,
+      loopEndMs: isSkipMode ? 0 : track.durationMs,
     );
 
     // Update lock screen metadata
@@ -310,8 +312,29 @@ class PlayerNotifier extends StateNotifier<PlaybackState> {
 
   /// Set player mode
   void setMode(PlayerMode mode) {
-    state = state.copyWith(mode: mode);
-    debugPrint('PlayerProvider: Mode set to $mode');
+    int startMs = state.loopStartMs;
+    int endMs = state.loopEndMs;
+
+    // Handle initial range for different modes
+    if (mode == PlayerMode.skip) {
+      // When switching to Skip mode, if the range covers the whole track,
+      // reset it to 0-0 so it doesn't skip everything immediately.
+      if (startMs == 0 && endMs == state.durationMs) {
+        startMs = 0;
+        endMs = 0;
+      }
+    } else if (mode == PlayerMode.loop) {
+      // When switching to Loop mode, if the range is empty (usually from Skip mode),
+      // reset it to the full track.
+      if (startMs == endMs) {
+        startMs = 0;
+        endMs = state.durationMs;
+      }
+    }
+
+    state = state.copyWith(mode: mode, loopStartMs: startMs, loopEndMs: endMs);
+
+    debugPrint('PlayerProvider: Mode set to $mode (Range: $startMs-$endMs)');
     // Update lock screen to show current mode
     if (state.currentTrack != null) {
       MediaSessionService.instance.updateMetadata(
