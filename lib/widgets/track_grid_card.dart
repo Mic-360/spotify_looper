@@ -1,5 +1,5 @@
-/// Track grid card widget with M3 Expressive styling.
-/// Features: album art glow shadow, spring animations, staggered entrance.
+/// Track grid card widget with M3 Expressive styling inspired by modern glassmorphism.
+/// Features: pedestal artwork containers, atmospheric glow shadows, spring animations.
 library;
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -45,16 +45,16 @@ class _TrackGridCardState extends State<TrackGridCard>
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.04).animate(
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
       CurvedAnimation(parent: _hoverController, curve: Curves.elasticOut),
     );
 
     // Staggered entrance animation
     _entranceController = AnimationController(
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _entranceSlide = Tween<double>(begin: 40.0, end: 0.0).animate(
+    _entranceSlide = Tween<double>(begin: 60.0, end: 0.0).animate(
       CurvedAnimation(
         parent: _entranceController,
         curve: const Cubic(0.34, 1.56, 0.64, 1), // M3E spring curve
@@ -63,12 +63,12 @@ class _TrackGridCardState extends State<TrackGridCard>
     _entranceOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _entranceController,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+        curve: const Interval(0.0, 0.4, curve: Curves.easeOut),
       ),
     );
 
     // Stagger the entrance based on index
-    Future.delayed(Duration(milliseconds: 60 * widget.animationIndex), () {
+    Future.delayed(Duration(milliseconds: 50 * widget.animationIndex), () {
       if (mounted) {
         _entranceController.forward();
       }
@@ -91,10 +91,36 @@ class _TrackGridCardState extends State<TrackGridCard>
     }
   }
 
+  // Get a pedestal/glow color based on the animation index to mimic the variety in the image
+  Color _getExpressiveColor(ColorScheme colorScheme) {
+    final colors = [
+      const Color(0xFF64B5F6), // Blue
+      const Color(0xFFFFB74D), // Amber
+      const Color(0xFF81C784), // Green
+      const Color(0xFFBA68C8), // Purple
+      const Color(0xFFE57373), // Red
+    ];
+    return colors[widget.animationIndex % colors.length];
+  }
+
+  // Get a pedestal background color (soft/muted)
+  Color _getPedestalColor(ColorScheme colorScheme) {
+    final colors = [
+      const Color(0xFFCEC8BC), // Clay
+      const Color(0xFFEBDCCB), // Peach-nude
+      const Color(0xFFD1DCD1), // Sage
+      const Color(0xFFDCD1DC), // Muted Purple
+      const Color(0xFFDCD1D1), // Muted Rose
+    ];
+    return colors[widget.animationIndex % colors.length];
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final expressiveColor = _getExpressiveColor(colorScheme);
+    final pedestalColor = _getPedestalColor(colorScheme);
 
     return AnimatedBuilder(
       animation: _entranceController,
@@ -114,229 +140,211 @@ class _TrackGridCardState extends State<TrackGridCard>
           },
           child: GestureDetector(
             onTap: widget.onTap,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutCubic,
+            child: Container(
               decoration: BoxDecoration(
                 color: widget.isPlaying
-                    ? colorScheme.primaryContainer.withValues(alpha: 0.5)
-                    : _isHovered
                     ? colorScheme.surfaceContainerHigh
-                    : colorScheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(24),
-                border: widget.isPlaying
-                    ? Border.all(
-                        color: colorScheme.primary.withValues(alpha: 0.7),
-                        width: 2,
-                      )
-                    : Border.all(
-                        color: colorScheme.outlineVariant.withValues(
-                          alpha: 0.2,
-                        ),
-                        width: 1,
-                      ),
+                    : colorScheme.surfaceContainerLow.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(32),
+                border: Border.all(
+                  color: widget.isPlaying
+                      ? expressiveColor.withValues(alpha: 0.5)
+                      : colorScheme.outlineVariant.withValues(alpha: 0.1),
+                  width: 1.5,
+                ),
                 boxShadow: [
-                  // Album art color glow
-                  if (widget.isPlaying)
-                    BoxShadow(
-                      color: colorScheme.primary.withValues(alpha: 0.35),
-                      blurRadius: 24,
-                      spreadRadius: 2,
-                      offset: const Offset(0, 6),
-                    )
-                  else if (_isHovered)
-                    BoxShadow(
-                      color: colorScheme.primary.withValues(alpha: 0.15),
-                      blurRadius: 20,
-                      spreadRadius: 1,
-                      offset: const Offset(0, 4),
-                    )
-                  else
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
+                  // Atmospheric glow shadow
+                  BoxShadow(
+                    color: widget.isPlaying
+                        ? expressiveColor.withValues(alpha: 0.3)
+                        : _isHovered
+                        ? expressiveColor.withValues(alpha: 0.15)
+                        : Colors.transparent,
+                    blurRadius: 32,
+                    spreadRadius: -4,
+                    offset: const Offset(0, 12),
+                  ),
                 ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Album art
-                  Expanded(
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        // Image
-                        ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(24),
-                          ),
-                          child: widget.track.artworkUrl != null
-                              ? CachedNetworkImage(
-                                  imageUrl: widget.track.artworkUrl!,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) => Container(
-                                    color: colorScheme.surfaceContainerHighest,
-                                    child: Center(
-                                      child: Icon(
-                                        Icons.music_note_rounded,
-                                        color: colorScheme.primary.withValues(
-                                          alpha: 0.5,
-                                        ),
-                                        size: 40,
-                                      ),
-                                    ),
-                                  ),
-                                  errorWidget: (context, url, error) =>
-                                      Container(
-                                        color:
-                                            colorScheme.surfaceContainerHighest,
-                                        child: Center(
-                                          child: Icon(
-                                            Icons.music_note_rounded,
-                                            color: colorScheme.primary
-                                                .withValues(alpha: 0.5),
-                                            size: 40,
-                                          ),
-                                        ),
-                                      ),
-                                )
-                              : Container(
-                                  color: colorScheme.surfaceContainerHighest,
-                                  child: Center(
-                                    child: Icon(
-                                      Icons.music_note_rounded,
-                                      color: colorScheme.primary.withValues(
-                                        alpha: 0.5,
-                                      ),
-                                      size: 40,
-                                    ),
-                                  ),
-                                ),
+                  // Artwork Pedestal
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: pedestalColor,
+                          borderRadius: BorderRadius.circular(32),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.12),
+                              blurRadius: 20,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
                         ),
-
-                        // Play button overlay with spring
-                        Positioned(
-                          right: 10,
-                          bottom: 10,
-                          child: AnimatedOpacity(
-                            opacity: _isHovered || widget.isPlaying ? 1.0 : 0.0,
-                            duration: const Duration(milliseconds: 250),
-                            child: AnimatedSlide(
-                              offset: _isHovered || widget.isPlaying
-                                  ? Offset.zero
-                                  : const Offset(0, 0.3),
-                              duration: const Duration(milliseconds: 350),
-                              curve: Curves.elasticOut,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            // Main Album Art (slightly smaller, floating)
+                            Positioned.fill(
+                              left: 14,
+                              right: 14,
+                              top: 14,
+                              bottom: 14,
                               child: Container(
-                                width: 42,
-                                height: 42,
                                 decoration: BoxDecoration(
-                                  color: colorScheme.primary,
-                                  shape: BoxShape.circle,
+                                  borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: colorScheme.primary.withValues(
-                                        alpha: 0.5,
+                                      color: Colors.black.withValues(
+                                        alpha: 0.25,
                                       ),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 3),
+                                      blurRadius: 16,
+                                      offset: const Offset(0, 8),
                                     ),
                                   ],
                                 ),
-                                child: Icon(
-                                  widget.isPlaying
-                                      ? Icons.pause_rounded
-                                      : Icons.play_arrow_rounded,
-                                  color: colorScheme.onPrimary,
-                                  size: 24,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: widget.track.artworkUrl != null
+                                      ? CachedNetworkImage(
+                                          imageUrl: widget.track.artworkUrl!,
+                                          fit: BoxFit.cover,
+                                          placeholder: (context, url) =>
+                                              _buildPlaceholder(colorScheme),
+                                          errorWidget: (context, url, err) =>
+                                              _buildPlaceholder(colorScheme),
+                                        )
+                                      : _buildPlaceholder(colorScheme),
                                 ),
                               ),
                             ),
-                          ),
-                        ),
 
-                        // Playing indicator pill
-                        if (widget.isPlaying)
-                          Positioned(
-                            top: 10,
-                            left: 10,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: colorScheme.primary,
-                                borderRadius: BorderRadius.circular(14),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: colorScheme.primary.withValues(
-                                      alpha: 0.4,
-                                    ),
-                                    blurRadius: 8,
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.equalizer_rounded,
-                                    color: colorScheme.onPrimary,
-                                    size: 14,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Playing',
-                                    style: textTheme.labelSmall?.copyWith(
-                                      color: colorScheme.onPrimary,
-                                      fontWeight: FontWeight.w700,
+                            // Floating Play Button (as in image)
+                            Positioned(
+                              right: -4,
+                              bottom: -4,
+                              child: AnimatedOpacity(
+                                opacity: _isHovered || widget.isPlaying
+                                    ? 1.0
+                                    : 0.0,
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                                child: Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.4),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.2,
+                                      ),
+                                      width: 1,
                                     ),
                                   ),
-                                ],
+                                  child: Center(
+                                    child: Container(
+                                      width: 32,
+                                      height: 32,
+                                      decoration: BoxDecoration(
+                                        color: widget.isPlaying
+                                            ? expressiveColor
+                                            : Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        widget.isPlaying
+                                            ? Icons.pause_rounded
+                                            : Icons.play_arrow_rounded,
+                                        color: widget.isPlaying
+                                            ? Colors.white
+                                            : Colors.black,
+                                        size: 20,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                      ],
+
+                            // Playing Label (Pedestal style)
+                            if (widget.isPlaying)
+                              Positioned(
+                                top: -6,
+                                left: -6,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: expressiveColor,
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: expressiveColor.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                        blurRadius: 10,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    'NOW PLAYING',
+                                    style: textTheme.labelSmall?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.5,
+                                      fontSize: 9,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
 
-                  // Track info
+                  // Info
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+                    padding: const EdgeInsets.fromLTRB(18, 4, 18, 20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           widget.track.name,
-                          style: textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: widget.isPlaying
-                                ? colorScheme.primary
-                                : colorScheme.onSurface,
+                          style: textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.2,
+                            color: Colors.white,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 3),
+                        const SizedBox(height: 4),
                         Row(
                           children: [
                             if (widget.track.explicit)
                               Padding(
-                                padding: const EdgeInsets.only(right: 4),
+                                padding: const EdgeInsets.only(right: 6),
                                 child: Icon(
                                   Icons.explicit_rounded,
                                   size: 14,
-                                  color: colorScheme.tertiary,
+                                  color: Colors.white.withValues(alpha: 0.4),
                                 ),
                               ),
                             Expanded(
                               child: Text(
                                 widget.track.artistNames,
-                                style: textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
+                                style: textTheme.bodyMedium?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  fontWeight: FontWeight.w500,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -351,6 +359,19 @@ class _TrackGridCardState extends State<TrackGridCard>
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder(ColorScheme colorScheme) {
+    return Container(
+      color: Colors.black12,
+      child: Center(
+        child: Icon(
+          Icons.music_note_rounded,
+          color: Colors.white.withValues(alpha: 0.2),
+          size: 40,
         ),
       ),
     );

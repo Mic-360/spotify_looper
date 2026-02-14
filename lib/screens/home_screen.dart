@@ -809,15 +809,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-        ...searchState.results.map(
-          (track) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: TrackCard(
-              track: track,
-              isPlaying: playerState.currentTrack?.id == track.id,
-              onTap: () => _playTrack(track),
-            ),
-          ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final crossAxisCount = (constraints.maxWidth / 180).floor().clamp(
+              2,
+              6,
+            );
+            return MasonryGridView.count(
+              crossAxisCount: crossAxisCount,
+              mainAxisSpacing: 14,
+              crossAxisSpacing: 14,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: searchState.results.length,
+              itemBuilder: (context, index) {
+                final track = searchState.results[index];
+                return TrackGridCard(
+                  track: track,
+                  isPlaying: playerState.currentTrack?.id == track.id,
+                  animationIndex: index,
+                  onTap: () => _playTrack(track),
+                );
+              },
+            );
+          },
         ),
         const SizedBox(height: 24),
       ],
@@ -901,26 +916,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     List<SpotifyTrack> tracks,
     PlaybackState playerState,
   ) {
-    return MasonryGridView.count(
-      crossAxisCount: 2,
-      mainAxisSpacing: 14,
-      crossAxisSpacing: 14,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: tracks.length,
-      itemBuilder: (context, index) {
-        final track = tracks[index];
-        // Alternate between taller and shorter for staggered effect
-        final isTall = index % 3 == 0;
-        return SizedBox(
-          height: isTall ? 250 : 210,
-          child: TrackGridCard(
-            track: track,
-            isPlaying: playerState.currentTrack?.id == track.id,
-            isTall: isTall,
-            animationIndex: index,
-            onTap: () => _playTrack(track),
-          ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Calculate dynamic column count based on width:
+        // ~180px per card is a good target for M3E cards
+        final crossAxisCount = (constraints.maxWidth / 180).floor().clamp(2, 8);
+
+        return MasonryGridView.count(
+          crossAxisCount: crossAxisCount,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: tracks.length,
+          itemBuilder: (context, index) {
+            final track = tracks[index];
+            return TrackGridCard(
+              track: track,
+              isPlaying: playerState.currentTrack?.id == track.id,
+              animationIndex: index,
+              onTap: () => _playTrack(track),
+            );
+          },
         );
       },
     );
