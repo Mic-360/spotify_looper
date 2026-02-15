@@ -1,0 +1,40 @@
+name: Web Build and Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_and_deploy:
+    name: Build & Deploy Web
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'latest'
+          channel: 'stable'
+          cache: true
+
+      - name: Create .env.json
+        run: |
+          echo '{
+            "SPOTIFY_CLIENT_ID": "${{ secrets.SPOTIFY_CLIENT_ID }}",
+            "SPOTIFY_CLIENT_SECRET": "${{ secrets.SPOTIFY_CLIENT_SECRET }}"
+          }' > .env.json
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build Web
+        run: flutter build web --release
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SPOTIFY_LOOPER_CC1AD }}'
+          channelId: live
+          projectId: spotify-looper-cc1ad
