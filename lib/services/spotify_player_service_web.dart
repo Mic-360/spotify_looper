@@ -241,7 +241,7 @@ class SpotifyPlayerService {
   }
 
   /// Set repeat mode
-  Future<void> setRepeatMode(RepeatMode mode) async {
+  Future<void> setRepeatMode(SpotifyRepeatMode mode) async {
     final spotifyLooper = globalContext['spotifyLooper'] as JSObject?;
     if (spotifyLooper != null) {
       spotifyLooper.callMethod('setRepeatMode'.toJS, mode.name.toJS);

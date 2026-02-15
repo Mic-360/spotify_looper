@@ -280,13 +280,13 @@ class _ExpandedPlayerCard extends ConsumerWidget {
     }
   }
 
-  IconData _getRepeatIcon(RepeatMode mode) {
+  IconData _getRepeatIcon(SpotifyRepeatMode mode) {
     switch (mode) {
-      case RepeatMode.off:
+      case SpotifyRepeatMode.off:
         return Icons.repeat_rounded;
-      case RepeatMode.track:
+      case SpotifyRepeatMode.track:
         return Icons.repeat_one_rounded;
-      case RepeatMode.context:
+      case SpotifyRepeatMode.context:
         return Icons.repeat_rounded;
     }
   }
@@ -534,7 +534,7 @@ class _ExpandedPlayerCard extends ConsumerWidget {
                                             ),
                                             color:
                                                 playerState.repeatMode !=
-                                                    RepeatMode.off
+                                                    SpotifyRepeatMode.off
                                                 ? modeColor
                                                 : colorScheme.onSurfaceVariant,
                                           ),

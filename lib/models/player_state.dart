@@ -1,5 +1,5 @@
 /// Repeat modes for playback
-enum RepeatMode { off, track, context }
+enum SpotifyRepeatMode { off, track, context }
 
 /// Player state for tracking playback from Spotify SDK
 class PlayerState {
@@ -11,7 +11,7 @@ class PlayerState {
   final String? albumArtUrl;
   final int positionMs;
   final int durationMs;
-  final RepeatMode repeatMode;
+  final SpotifyRepeatMode repeatMode;
   final bool shuffleEnabled;
 
   const PlayerState({
@@ -23,7 +23,7 @@ class PlayerState {
     this.albumArtUrl,
     this.positionMs = 0,
     this.durationMs = 0,
-    this.repeatMode = RepeatMode.off,
+    this.repeatMode = SpotifyRepeatMode.off,
     this.shuffleEnabled = false,
   });
 
@@ -38,7 +38,7 @@ class PlayerState {
     String? albumArtUrl,
     int? positionMs,
     int? durationMs,
-    RepeatMode? repeatMode,
+    SpotifyRepeatMode? repeatMode,
     bool? shuffleEnabled,
   }) => PlayerState(
     isPlaying: isPlaying ?? this.isPlaying,

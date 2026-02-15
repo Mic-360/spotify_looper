@@ -142,16 +142,16 @@ class SpotifyPlayerService {
       final options = state.playbackOptions;
 
       // Map repeat mode
-      RepeatMode repeatMode = RepeatMode.off;
+      SpotifyRepeatMode repeatMode = SpotifyRepeatMode.off;
       switch (options.repeatMode) {
         case sdk_opt.RepeatMode.off:
-          repeatMode = RepeatMode.off;
+          repeatMode = SpotifyRepeatMode.off;
           break;
         case sdk_opt.RepeatMode.track:
-          repeatMode = RepeatMode.track;
+          repeatMode = SpotifyRepeatMode.track;
           break;
         case sdk_opt.RepeatMode.context:
-          repeatMode = RepeatMode.context;
+          repeatMode = SpotifyRepeatMode.context;
           break;
       }
 
@@ -238,17 +238,17 @@ class SpotifyPlayerService {
   }
 
   /// Set repeat mode
-  Future<void> setRepeatMode(RepeatMode mode) async {
+  Future<void> setRepeatMode(SpotifyRepeatMode mode) async {
     try {
       late sdk_enum.RepeatMode sdkMode;
       switch (mode) {
-        case RepeatMode.off:
+        case SpotifyRepeatMode.off:
           sdkMode = sdk_enum.RepeatMode.off;
           break;
-        case RepeatMode.track:
+        case SpotifyRepeatMode.track:
           sdkMode = sdk_enum.RepeatMode.track;
           break;
-        case RepeatMode.context:
+        case SpotifyRepeatMode.context:
           sdkMode = sdk_enum.RepeatMode.context;
           break;
       }

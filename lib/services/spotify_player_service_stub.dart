@@ -23,7 +23,7 @@ class SpotifyPlayerService {
   Future<void> seek(int positionMs) async => throw UnimplementedError();
   Future<void> skipNext() async => throw UnimplementedError();
   Future<void> skipPrevious() async => throw UnimplementedError();
-  Future<void> setRepeatMode(RepeatMode mode) async =>
+  Future<void> setRepeatMode(SpotifyRepeatMode mode) async =>
       throw UnimplementedError();
   Future<void> setShuffle(bool enabled) async => throw UnimplementedError();
   void dispose() => throw UnimplementedError();

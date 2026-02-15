@@ -23,7 +23,7 @@ class PlaybackState {
   final PlayerMode mode;
   final int loopStartMs;
   final int loopEndMs;
-  final RepeatMode repeatMode;
+  final SpotifyRepeatMode repeatMode;
   final bool shuffleEnabled;
 
   const PlaybackState({
@@ -38,7 +38,7 @@ class PlaybackState {
     this.mode = PlayerMode.normal,
     this.loopStartMs = 0,
     this.loopEndMs = 0,
-    this.repeatMode = RepeatMode.off,
+    this.repeatMode = SpotifyRepeatMode.off,
     this.shuffleEnabled = false,
   });
 
@@ -68,7 +68,7 @@ class PlaybackState {
     PlayerMode? mode,
     int? loopStartMs,
     int? loopEndMs,
-    RepeatMode? repeatMode,
+    SpotifyRepeatMode? repeatMode,
     bool? shuffleEnabled,
   }) => PlaybackState(
     isPlaying: isPlaying ?? this.isPlaying,
@@ -402,16 +402,16 @@ class PlayerNotifier extends StateNotifier<PlaybackState> {
 
   /// Toggle repeat mode
   Future<void> cycleRepeatMode() async {
-    RepeatMode nextMode;
+    SpotifyRepeatMode nextMode;
     switch (state.repeatMode) {
-      case RepeatMode.off:
-        nextMode = RepeatMode.context;
+      case SpotifyRepeatMode.off:
+        nextMode = SpotifyRepeatMode.context;
         break;
-      case RepeatMode.context:
-        nextMode = RepeatMode.track;
+      case SpotifyRepeatMode.context:
+        nextMode = SpotifyRepeatMode.track;
         break;
-      case RepeatMode.track:
-        nextMode = RepeatMode.off;
+      case SpotifyRepeatMode.track:
+        nextMode = SpotifyRepeatMode.off;
         break;
     }
 
