@@ -99,6 +99,34 @@ dart run build_runner build --delete-conflicting-outputs
 dart run icons_launcher:create
 ```
 
+## 🚢 Releases
+
+The project includes automated release workflows through GitHub Actions:
+
+### Creating a Release
+
+To create a new release:
+
+1. Update the version in `pubspec.yaml`
+2. Commit the changes
+3. Create and push a git tag with the version number:
+
+```bash
+git tag v1.0.2
+git push origin v1.0.2
+```
+
+This will automatically trigger the release workflow which will:
+- Build the Android APK
+- Build and deploy the web app to Firebase Hosting
+- Create a GitHub Release with the APK attached
+
+### Manual Builds
+
+You can also trigger builds manually using GitHub Actions:
+- **Android Build**: Run the `Android Release Build` workflow
+- **Web Deploy**: Run the `Web Build and Deploy` workflow
+
 ## 🤝 Contributing
 
 Contributions are welcome!
