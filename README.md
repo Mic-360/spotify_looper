@@ -123,9 +123,7 @@ This will automatically trigger the release workflow which will:
 
 ### Manual Builds
 
-You can also trigger builds manually using GitHub Actions:
-- **Android Build**: Run the `Android Release Build` workflow
-- **Web Deploy**: Run the `Web Build and Deploy` workflow
+You can also trigger the release workflow manually from the GitHub Actions tab without creating a tag.
 
 ## 🤝 Contributing
 
